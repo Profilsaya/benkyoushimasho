@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Irodori Learning</title>
+</head><body>
+<!-- MULAI SALIN DARI SINI -->
+<div id="irodori-host"></div>
+<script>
+(function () {
+const CSS = `:host{display:block;--bg:#f5f6fa;--card:#fff;--tx:#1b2030;--mu:#677086;--pr:#4263eb;--pr2:#edf1ff;--onp:#fff;--ok:#2f9e44;--no:#e03131;--bd:#e6e9f1;--sh:0 6px 24px rgba(20,30,60,.07)}
+@media(prefers-color-scheme:dark){:host{--bg:#0f1218;--card:#181c26;--tx:#e9ecf4;--mu:#98a1b6;--pr:#8aa0ff;--pr2:#232a44;--onp:#0f1218;--ok:#51cf66;--no:#ff6b6b;--bd:#272d3b;--sh:0 6px 24px rgba(0,0,0,.4)}}
+:host([data-t=light]){--bg:#f5f6fa;--card:#fff;--tx:#1b2030;--mu:#677086;--pr:#4263eb;--pr2:#edf1ff;--onp:#fff;--ok:#2f9e44;--no:#e03131;--bd:#e6e9f1;--sh:0 6px 24px rgba(20,30,60,.07)}
+:host([data-t=dark]){--bg:#0f1218;--card:#181c26;--tx:#e9ecf4;--mu:#98a1b6;--pr:#8aa0ff;--pr2:#232a44;--onp:#0f1218;--ok:#51cf66;--no:#ff6b6b;--bd:#272d3b;--sh:0 6px 24px rgba(0,0,0,.4)}
+*{box-sizing:border-box}
+#shell{background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,'Segoe UI','Noto Sans JP',sans-serif;min-height:100vh;padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+header{max-width:760px;margin:0 auto;padding:20px 18px 10px;font-size:24px;font-weight:800;letter-spacing:-.02em}header small{font-size:15px;font-weight:600;color:var(--mu);margin-left:6px}
+main{max-width:760px;margin:0 auto;padding:6px 16px 24px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--sh)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.grid .card{margin:0}
+.num{font-size:30px;font-weight:800;line-height:1.15}.mu{color:var(--mu);font-size:14px;line-height:1.5}.sm{font-size:13px;color:var(--mu);line-height:1.5}
+h3{margin:22px 4px 12px;font-size:18px}p{margin:10px 0}
+button{font:inherit;color:var(--tx);min-height:46px;padding:0 16px;border-radius:14px;border:1px solid var(--bd);background:var(--card);cursor:pointer;transition:background .15s,transform .1s}
+button:active{transform:scale(.98)}button.p{background:var(--pr);color:var(--onp);border-color:var(--pr);font-weight:700}button.on{background:var(--pr2);border-color:var(--pr);color:var(--pr);font-weight:700}button:disabled{opacity:.45;cursor:default}button.danger{background:var(--no);border-color:var(--no);color:#fff;font-weight:700}
+select,input{display:block;width:100%;min-height:46px;padding:0 12px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.row{display:flex;gap:10px;margin-top:10px;align-items:stretch}.row>*{flex:1;min-width:0}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer}.item:last-child{border-bottom:0}
+.jp{font-size:22px;line-height:1.45;overflow-wrap:anywhere}.big{font-size:clamp(28px,9vw,44px);line-height:1.35;overflow-wrap:anywhere}
+.tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;background:var(--pr2);color:var(--pr);white-space:nowrap}
+mark{background:#ffe066;color:#222;border-radius:4px;padding:0 3px}.err{color:var(--no)}
+.fc{perspective:1000px;margin-bottom:14px}.fci{display:grid;transition:transform .5s;transform-style:preserve-3d;cursor:pointer}.fci.f{transform:rotateY(180deg)}
+.face{grid-area:1/1;-webkit-backface-visibility:hidden;backface-visibility:hidden;background:var(--card);border:1px solid var(--bd);border-radius:22px;box-shadow:var(--sh);padding:26px 18px;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;overflow-wrap:anywhere}.back{transform:rotateY(180deg)}
+.ch{display:block;width:100%;text-align:left;margin:0 0 10px;min-height:50px;height:auto;padding:12px 16px;line-height:1.45}.okc{border-color:var(--ok);background:rgba(47,158,68,.14)}.noc{border-color:var(--no);background:rgba(224,49,49,.12)}
+canvas{width:100%;max-width:320px;aspect-ratio:1;background:#fff;border-radius:18px;border:1px solid var(--bd);touch-action:none;display:block;margin:0 auto 12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.sheet{background:var(--card);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom))}
+nav{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;display:flex;gap:2px;padding:6px;border-radius:26px;background:color-mix(in srgb,var(--card) 84%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--bd);box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:40}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;padding:6px 0;border:0;border-radius:20px;background:none;color:var(--mu);font-size:11px;font-weight:600;position:relative}
+nav button.on{background:var(--pr2);color:var(--pr)}
+svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.dot{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:var(--no);color:#fff;font-size:10px;font-style:normal;line-height:17px;padding:0 4px}
+.mrow{display:flex;gap:14px;align-items:center;width:100%;text-align:left;margin:0 0 10px;padding:14px;height:auto;line-height:1.4}.mrow svg{width:26px;height:26px;stroke:var(--pr)}`;
+const host = document.getElementById('irodori-host'), R = host.attachShadow({ mode: 'open' });
+R.innerHTML = `<style>${CSS}</style><div id="shell"><header id="hd">Irodori</header><main id="v"></main><nav id="nav"></nav><div id="m"></div></div>`;
+const $ = id => R.getElementById(id);
+// ====== KONFIGURASI: tempel URL Web App Apps Script (berakhiran /exec) ======
+const API_URL = 'https://script.google.com/macros/s/AKfycbw-2oEVc96DWzxAhxEBOyE1y2SONmi5PMiAjYQtwQJ3CYEHkvGV1CEQyVLogA3yVa1qWg/exec';
+const GOOGLE_CLIENT_ID = 'GANTI_DENGAN_GOOGLE_CLIENT_ID';   // opsional; kosongkan = login Google disembunyikan
+// ===========================================================================
+const E = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(action, data) {
+  if (API_URL.startsWith('GANTI')) throw new Error('API_URL belum diisi di index.html');
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action, data, token: S.auth?.token }) });
+  const j = await r.json(); if (!j.ok) { const e = new Error(j.error.message); e.code = j.error.code; throw e; } return j.data;
+}
+// ---- IndexedDB (data Guest) ----
+const idb = new Promise((res, rej) => {
+  const q = indexedDB.open('irodori', 1);
+  q.onupgradeneeded = () => { q.result.createObjectStore('kv', { keyPath: 'k' }); q.result.createObjectStore('answers', { keyPath: 'answerId' }); };
+  q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+});
+const tx = async (st, mode, fn) => { const d = await idb; return new Promise((res, rej) => { const t = d.transaction(st, mode), r = fn(t.objectStore(st)); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
+const kvGet = async k => (await tx('kv', 'readonly', s => s.get(k))) ?.v;
+const kvSet = (k, v) => tx('kv', 'readwrite', s => s.put({ k, v }));
+// ---- State ----
+const S = { tab: 'home', books: [], sel: [], words: {}, bab: '', cat: '', q: '', marks: {}, favs: {}, shown: 80, err: '', loading: true,
+            F: { deck: [], i: 0, flip: false, shuffle: false } };
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+const sessionId = 'g-' + uid().slice(0, 12);
+async function init() {
+  S.marks = (await kvGet('marks')) || {}; S.favs = (await kvGet('favs')) || {}; S.stat = (await kvGet('stat')) || {}; S.hist = (await kvGet('hist')) || []; S.target = (await kvGet('target')) || 20;
+  S.ans = (await tx('answers', 'readonly', st => st.getAll())) || []; S.prog = {};
+  S.auth = (await kvGet('auth')) || null; S.owner = (await kvGet('owner')) || null; S.sprog = (await kvGet('sprog')) || null; S.favOff = (await kvGet('favoff')) || {};
+  S.set = (await kvGet('set')) || S.set; S.setTs = (await kvGet('setts')) || 0; S.Q.cfg.n = S.set.n; S.Q.cfg.mode = S.set.mode; applyTheme(); rebuildProg();
+  try {
+    const ver = (await api('getBooks'));
+    S.books = ver.books; S.sel = ver.books.filter(b => b.count > 0).slice(-1).map(b => b.id);
+    const sv = await kvGet('sel'); if (sv && sv.every(id => ver.books.some(b => b.id === id && b.count))) S.sel = sv;
+    await loadWords();
+  } catch (e) { S.err = e.message; }
+  S.loading = false; render(); if (S.auth) syncNow(true);
+}
+async function loadWords() {
+  for (const b of S.sel) if (!S.words[b]) S.words[b] = (await api('getWords', { books: [b] })).words;
+}
+const cur = () => S.sel.flatMap(b => S.words[b] || []);
+const babs = () => [...new Set(cur().map(w => w.bab))].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
+const cats = () => [...new Set(cur().map(w => w.kategori))].sort();
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  return cur().filter(w => (!S.bab || w.bab === S.bab) && catOK(w) &&
+    (!q || w.kanji.toLowerCase().includes(q) || w.furi.toLowerCase().includes(q) || w.arti.toLowerCase().includes(q)));
+}
+const byId = id => Object.values(S.words).flat().find(w => w.id === id);
+async function mark(id, type) {
+  S.marks[id] = type; await kvSet('marks', S.marks);
+  await addAns({ answerId: uid(), wordId: id, benar: type === 'm', ts: Date.now(), jenis: 'kartu', manual: type === 'm' ? 'mastered' : 'review', sessionId });
+}
+async function fav(id) { const t = Date.now(); if (S.favs[id]) { delete S.favs[id]; S.favOff[id] = t; } else { S.favs[id] = t; delete S.favOff[id]; } await kvSet('favs', S.favs); await kvSet('favoff', S.favOff); autoSync(); }
+// ---- Spaced Repetition (sama dengan backend) ----
+const DAY = 864e5, IV = [10 / 1440, 1, 3, 7, 14, 30, 60];
+const srsNew = () => ({ correct: 0, wrong: 0, streak: 0, level: 0, lastTs: 0, nextReview: 0, mastery: 'baru', events: 0 });
+function srsApply(st, ev) {
+  const s = { ...st }; s.events++; s.lastTs = Math.max(s.lastTs, ev.ts);
+  if (ev.manual === 'mastered') { s.level = Math.max(s.level, 4); s.streak = Math.max(s.streak, 3); s.nextReview = ev.ts + IV[s.level] * DAY; }
+  else if (ev.manual === 'review') { s.level = 0; s.streak = 0; s.nextReview = ev.ts + IV[0] * DAY; }
+  else if (ev.ok) { s.correct++; s.streak++; s.level = Math.min(s.level + 1, 6); const t = s.correct + s.wrong, a = s.correct / t, f = t < 3 ? 1 : a < .6 ? .7 : a >= .9 ? 1.2 : 1; s.nextReview = ev.ts + IV[s.level] * f * DAY; }
+  else { s.wrong++; s.streak = 0; s.level = Math.max(s.level - 2, 0); s.nextReview = ev.ts + IV[0] * DAY; }
+  s.mastery = s.level >= 4 && s.streak >= 3 ? 'dikuasai' : s.level >= 2 ? 'berkembang' : s.level === 1 && s.wrong === 0 ? 'baru' : 'perlu_diulang';
+  return s;
+}
+function addAns(ev) { autoSync(); S.ans.push(ev); S.prog[ev.wordId] = srsApply(S.prog[ev.wordId] || srsNew(), { ok: ev.benar, ts: ev.ts, manual: ev.manual || '' }); return tx('answers', 'readwrite', st => st.put(ev)); }
+async function loadAll() { for (const b of S.books) if (b.count && !S.words[b.id]) S.words[b.id] = (await api('getWords', { books: [b.id] })).words; }
+const MS = { baru: 'Baru dipelajari', perlu_diulang: 'Perlu diulang', berkembang: 'Sedang berkembang', dikuasai: 'Dikuasai' };
+const status = id => ({ m: 'Dikuasai', r: 'Perlu diulang' }[S.marks[id]] || 'Belum ditandai');
+const hl = w => { const s = w.kalimat; if (w.tk && s.includes(w.tk)) { const i = s.indexOf(w.tk); return E(s.slice(0, i)) + '<mark>' + E(w.tk) + '</mark>' + E(s.slice(i + w.tk.length)); } return E(s); };
+// ---- Tampilan ----
+function filters() {
+  return `<div class="card"><div class="chips">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count ? '' : 'disabled'}>${E(b.label)}${b.count ? '' : ' (kosong)'}</button>`).join('')}</div>
+  <div class="mu" style="margin-bottom:6px">Pilih satu atau beberapa buku untuk gabungan.</div>
+  <select data-a="bab"><option value="">Semua bab</option>${babs().map(b => `<option ${S.bab === b ? 'selected' : ''}>${b}</option>`).join('')}</select>
+  ${catUI()}
+  <input id="q" placeholder="Cari kanji, furigana, atau arti" value="${E(S.q)}"></div>`;
+}
+function vHome() {
+  const P = Object.values(S.prog).filter(x => x.events > 0), now = Date.now(), qa = S.ans.filter(a => !a.manual), ok = qa.filter(a => a.benar).length;
+  const due = P.filter(x => x.nextReview <= now).length, td = new Date().toDateString(), done = S.ans.filter(a => new Date(a.ts).toDateString() === td).length;
+  const pct = Math.min(100, Math.round(done / S.target * 100));
+  return `<div class="grid"><div class="card"><div class="num">${P.length}</div><div class="mu">Kotoba dipelajari</div></div>
+  <div class="card"><div class="num">${P.filter(x => x.mastery === 'dikuasai').length}</div><div class="mu">Dikuasai</div></div>
+  <div class="card"><div class="num">${qa.length ? Math.round(ok / qa.length * 100) + '%' : '–'}</div><div class="mu">Akurasi latihan</div></div>
+  <div class="card"><div class="num">${due}</div><div class="mu">Perlu diulang hari ini</div></div></div>
+  <div class="card"><b>Target harian</b><div class="row" style="align-items:center"><span>${done} / ${S.target} aktivitas hari ini</span><span style="flex:0 0 auto"><button data-a="tg" data-v="-5">−</button> <button data-a="tg" data-v="5">+</button></span></div>${bar(0, pct)}</div>
+  <div class="row"><button class="p" data-a="tab" data-v="card">Mulai belajar</button><button class="p" data-a="tab" data-v="quiz">Mulai latihan</button></div>
+  <div class="row" style="margin-bottom:12px"><button data-a="tab" data-v="review">Review (${due})</button></div>
+  <div class="card"><b>Aktivitas terakhir</b>${S.hist.slice(-5).reverse().map(h => `<div class="item" style="cursor:default"><span>${new Date(h.ts).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}<div class="sm">${h.source === 'review' ? 'Review' : h.mode} · ${E(h.jenis)}</div></span><b>${Math.round(h.benar / h.total * 100)}%</b></div>`).join('') || '<p class="mu">Belum ada latihan.</p>'}</div>
+  <div class="card mu">Mode Guest: progres tersimpan di browser ini. Menghapus data situs/browser dapat menghapus progres. Buka Statistik untuk mengekspor cadangan.</div>`;
+}
+function vMateri() { return filters() + '<div id="lst">' + listHTML() + '</div>'; }
+function listHTML() {
+  const l = filtered();
+  return `<div class="mu" style="margin:0 4px 8px">${l.length} kotoba</div><div class="card" style="padding:4px 14px">${l.slice(0, S.shown).map(w =>
+    `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.furi)} · ${E(w.arti)}</div></div><span class="tag">${S.favs[w.id] ? '★ ' : ''}${w.bab}</span></div>`).join('') || '<p class="mu">Tidak ada hasil.</p>'}
+  ${l.length > S.shown ? '<button style="width:100%;margin:10px 0" data-a="more">Tampilkan lebih banyak</button>' : ''}</div>`;
+}
+function buildDeck() {
+  const ids = filtered().map(w => w.id);
+  if (S.F.shuffle) for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  S.F.deck = ids; S.F.i = 0; S.F.flip = false;
+}
+function vCard() { return filters() + '<div id="cb">' + cardBody() + '</div>'; }
+function cardBody() {
+  const F = S.F, w = byId(F.deck[F.i]);
+  const top = `<div class="row" style="margin-bottom:10px"><button class="${F.shuffle ? 'on' : ''}" data-a="shuf">Acak ${F.shuffle ? 'aktif' : 'mati'}</button><button data-a="deck">Susun ulang kartu</button></div>`;
+  if (!w) return top + '<div class="card mu">Tidak ada kartu. Ubah filter lalu tekan "Susun ulang kartu".</div>';
+  return top + `<div class="mu" style="text-align:center;margin-bottom:6px">${F.i + 1} / ${F.deck.length} · ${status(w.id)}</div>
+  <div class="fc"><div class="fci ${F.flip ? 'f' : ''}" data-a="flip"><div class="face"><div class="big">${E(w.kanji)}</div><div class="mu" style="margin-top:10px">Ketuk untuk membalik</div></div>
+  <div class="face back"><div class="jp">${E(w.furi)}</div><div style="margin:6px 0;font-weight:600">${E(w.arti)}</div><span class="tag">${E(w.kategori)}</span>
+  <div style="margin-top:10px">${hl(w)}</div><div class="sm">${E(w.furiKalimat)}</div><div class="sm">${E(w.artiKalimat)}</div></div></div></div>
+  <div class="row"><button data-a="prev" ${F.i ? '' : 'disabled'}>◀ Sebelumnya</button><button data-a="next" ${F.i < F.deck.length - 1 ? '' : 'disabled'}>Berikutnya ▶</button></div>
+  <div class="row"><button data-a="mk" data-v="m" class="${S.marks[w.id] === 'm' ? 'on' : ''}">✓ Sudah dikuasai</button><button data-a="mk" data-v="r" class="${S.marks[w.id] === 'r' ? 'on' : ''}">↻ Perlu diulang</button></div>
+  <div class="row"><button data-a="favc" class="${S.favs[w.id] ? 'on' : ''}">${S.favs[w.id] ? '★ Favorit' : '☆ Tandai favorit'}</button></div>`;
+}
+function detail(id) {
+  const w = byId(id); if (!w) return;
+  $('m').innerHTML = `<div class="modal" data-a="close"><div class="sheet"><div class="jp" style="font-size:34px">${E(w.kanji)}</div>
+  <div>${E(w.furi)}</div><p><b>${E(w.arti)}</b></p><span class="tag">${E(w.kategori)}</span> <span class="tag">${w.id}</span> <span class="tag">${status(w.id)}</span>
+  <p>${hl(w)}</p><div class="sm">${E(w.furiKalimat)}</div><div class="sm">${E(w.artiKalimat)}</div>
+  <div class="row"><button data-a="dm" data-v="${w.id}|m">✓ Dikuasai</button><button data-a="dm" data-v="${w.id}|r">↻ Perlu diulang</button></div>
+  <div class="row"><button data-a="df" data-v="${w.id}">${S.favs[w.id] ? '★ Hapus favorit' : '☆ Favorit'}</button><button data-a="close">Tutup</button></div></div></div>`;
+}
+// ---- Latihan soal ----
+const JN = { arti: 'Arti kotoba', furigana: 'Furigana', kanji: 'Kanji', kalimat: 'Contoh kalimat', tulis: 'Menulis kanji' };
+S.Q = { cfg: { jenis: ['arti'], n: '10', custom: '', per: false, mode: 'latihan', prio: false, from: '', to: '' }, run: null, msg: '' };
+const sh = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const bn = b => parseInt(b.slice(1));
+function opts(w, key, all) {   // pengecoh: kategori sama, bukan jawaban benar, tanpa duplikat
+  const seen = new Set([w[key]]), out = [];
+  for (const x of sh(all.filter(x => x.kategori === w.kategori && x.id !== w.id && (key !== 'kanji' || x.hk)))) {
+    if (x[key] && !seen.has(x[key])) { seen.add(x[key]); out.push(x[key]); if (out.length === 3) break; }
+  }
+  return out.length >= 2 ? sh([w[key], ...out]) : null;   // minimal 3 pilihan, jika kurang soal dilewati
+}
+function mkQ(w, t, all) {
+  if (t === 'tulis') return w.hk ? { t, id: w.id, prompt: w.arti + ' / ' + w.furi, ans: w.kanji } : null;
+  if (t === 'kalimat' && !w.tk) return null;
+  if ((t === 'furigana' || t === 'kanji') && !w.hk) return null;
+  if (t === 'furigana') { const fo = furiOpts(w.furi); if (fo) return { t, id: w.id, o: fo, ans: w.furi, prompt: w.kanji }; }
+  const key = { arti: 'arti', furigana: 'furi', kanji: 'kanji', kalimat: 'arti' }[t], o = opts(w, key, all);
+  return o ? { t, id: w.id, o, ans: w[key], prompt: t === 'kanji' ? w.arti + ' / ' + w.furi : w.kanji } : null;
+}
+function gen(c) {
+  const all = cur(), wt = w => (S.stat[w.id]?.w || 0) + (S.marks[w.id] === 'r' ? 2 : 0);
+  let ws = sh(all.filter(w => catOK(w) && (!c.from || bn(w.bab) >= +c.from) && (!c.to || bn(w.bab) <= +c.to)));
+  if (c.prio) ws.sort((a, b) => wt(b) - wt(a));
+  const qs = [];
+  for (const w of ws) for (const t of sh(c.jenis)) { const q = mkQ(w, t, all); if (q) { q.bab = w.bab; qs.push(q); break; } }  // 1 kotoba = maks 1 soal
+  const n = c.n === 'custom' ? Math.max(1, +c.custom || 1) : +c.n;
+  if (c.per) { const g = {}; qs.forEach(q => (g[q.bab] = g[q.bab] || []).push(q)); return sh(Object.values(g).flatMap(a => a.slice(0, n))); }
+  return sh(qs.slice(0, n));
+}
+function newRun(qs, mode, src) { return { src: src || 'manual', qs, i: 0, ans: [], mode, t0: Date.now(), fb: null, strokes: [], reveal: false, sid: 'q-' + uid().slice(0, 12), done: false }; }
+function startQ() {
+  const c = S.Q.cfg, qs = gen(c), n = c.n === 'custom' ? +c.custom || 1 : +c.n;
+  if (!qs.length) { S.Q.msg = 'Tidak ada soal valid untuk pengaturan ini. Ubah buku, bab, kategori, atau jenis latihan.'; return; }
+  S.Q.msg = !c.per && qs.length < n ? 'Hanya ' + qs.length + ' soal valid yang tersedia.' : '';
+  S.Q.run = newRun(qs, c.mode);
+}
+function retryQ() { const r = S.Q.run; S.Q.run = newRun(sh(r.ans.filter(a => !a.ok).map(a => ({ ...a.q, o: a.q.o ? sh(a.q.o) : undefined }))), r.mode, r.src); S.Q.msg = ''; }
+function record(q, ok) {
+  const r = S.Q.run, now = Date.now();
+  addAns({ answerId: uid(), wordId: q.id, benar: ok, ts: now, jenis: q.t, sessionId: r.sid });
+  const st = S.stat[q.id] = S.stat[q.id] || { c: 0, w: 0 }; ok ? st.c++ : st.w++; st.last = now; kvSet('stat', S.stat);
+}
+function answer(ok, given) {
+  const r = S.Q.run, q = r.qs[r.i]; r.ans.push({ q, given, ok }); record(q, ok);
+  if (r.mode === 'ujian' || q.t === 'tulis') next(); else r.fb = { ok, given };
+}
+function next() {
+  const r = S.Q.run; r.i++; r.fb = null; r.reveal = false; r.strokes = [];
+  if (r.i >= r.qs.length) {
+    r.done = true; const ok = r.ans.filter(a => a.ok).length;
+    S.hist.push({ sessionId: r.sid, ts: Date.now(), mode: r.mode, source: r.src, jenis: [...new Set(r.qs.map(q => q.t))].join(','), total: r.ans.length, benar: ok, durasi: Math.round((Date.now() - r.t0) / 1000) });
+    kvSet('hist', S.hist);
+  }
+}
+function setupV() {
+  const c = S.Q.cfg, ch = (k, v, label, on) => `<button class="${on ? 'on' : ''}" data-a="qc" data-v="${k}=${v}">${label}</button>`;
+  const nums = [...new Set(cur().map(w => bn(w.bab)))].sort((a, b) => a - b), sel = (k) => `<select data-a="qsel" data-k="${k}"><option value="">${k === 'from' ? 'Dari bab' : 'Sampai bab'}</option>${nums.map(n => `<option value="${n}" ${String(c[k]) === String(n) ? 'selected' : ''}>L${n}</option>`).join('')}</select>`;
+  return (S.Q.msg ? `<div class="card err">${E(S.Q.msg)}</div>` : '') +
+  `<div class="card"><b>Sumber soal</b><div class="chips" style="margin-top:8px">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count ? '' : 'disabled'}>${E(b.label)}${b.count ? '' : ' (kosong)'}</button>`).join('')}</div>
+  ${catUI()}<div class="row">${sel('from')}${sel('to')}</div><div class="mu">Kosongkan bab untuk semua bab; isi keduanya untuk satu bab atau rentang.</div></div>
+  <div class="card"><b>Jenis latihan</b><div class="chips" style="margin-top:8px">${Object.keys(JN).map(k => `<button class="${c.jenis.includes(k) ? 'on' : ''}" data-a="qj" data-v="${k}">${JN[k]}</button>`).join('')}</div></div>
+  <div class="card"><b>Jumlah soal</b><div class="chips" style="margin-top:8px">${['10', '20', '30', 'custom'].map(n => ch('n', n, n === 'custom' ? 'Custom' : n, c.n === n)).join('')}</div>
+  ${c.n === 'custom' ? `<input id="qcustom" type="number" min="1" placeholder="Jumlah soal" value="${E(c.custom)}">` : ''}
+  <div class="chips">${ch('per', 'false', 'Total seluruh bab', !c.per)}${ch('per', 'true', 'Per bab', c.per)}</div>
+  <b>Mode</b><div class="chips" style="margin-top:8px">${ch('mode', 'latihan', 'Latihan', c.mode === 'latihan')}${ch('mode', 'ujian', 'Ujian', c.mode === 'ujian')}</div>
+  <b>Urutan</b><div class="chips" style="margin-top:8px">${ch('prio', 'false', 'Acak', !c.prio)}${ch('prio', 'true', 'Prioritas kotoba sulit', c.prio)}</div></div>
+  <button class="p" style="width:100%" data-a="qstart">Mulai</button><p class="mu">Jumlah soal tidak melebihi soal valid yang tersedia. Menulis kanji memakai penilaian mandiri (tidak ada pengenalan tulisan otomatis).</p>`;
+}
+function questionV() {
+  const r = S.Q.run, q = r.qs[r.i], w = byId(q.id), N = r.qs.length;
+  let h = `<div class="row" style="align-items:center;margin-bottom:8px"><span class="mu">${JN[q.t]} · ${r.i + 1}/${N}${r.mode === 'ujian' ? ' · Ujian' : ''}</span><button data-a="qstop" style="flex:0 0 auto">Hentikan</button></div>${r.i === 0 && S.Q.msg ? `<div class="mu">${E(S.Q.msg)}</div>` : ''}<div class="card" style="text-align:center">`;
+  if (q.t === 'kalimat') h += `<div class="jp">${hl(w)}</div><p>Apa arti kata <b>${E(q.prompt)}</b>?</p>`;
+  else if (q.t === 'tulis') h += `<div class="mu">Tulislah kanji/kotoba untuk:</div><div style="font-size:22px;font-weight:600">${E(q.prompt)}</div>`;
+  else h += `<div class="${q.t === 'kanji' ? 'jp' : 'big'}">${E(q.prompt)}</div><div class="mu">${{ arti: 'Pilih arti yang benar', furigana: 'Pilih bacaan yang benar', kanji: 'Pilih kanji/kotoba yang benar' }[q.t]}</div>`;
+  h += '</div>';
+  if (q.t === 'tulis') {
+    return h + (r.reveal ? `<div class="card" style="text-align:center"><div class="mu">Contoh:</div><div class="big">${E(q.ans)}</div></div>` : '') +
+      `<canvas id="cv" width="320" height="320"></canvas><div class="row"><button data-a="tundo">Ulang goresan</button><button data-a="tclear">Hapus semua</button></div>` +
+      (r.reveal ? `<p class="mu" style="text-align:center">Bandingkan, lalu nilai tulisanmu sendiri:</p><div class="row"><button data-a="tgrade" data-v="1">✓ Sudah benar</button><button data-a="tgrade" data-v="0">✗ Masih salah</button></div>` : `<div class="row"><button class="p" data-a="treveal">Selesai, tampilkan contoh</button></div>`);
+  }
+  q.o.forEach((o, k) => { let cl = ''; if (r.fb) { if (o === q.ans) cl = 'okc'; else if (o === r.fb.given) cl = 'noc'; } h += `<button class="ch ${cl}" data-a="pick" data-v="${k}" ${r.fb ? 'disabled' : ''}>${E(o)}</button>`; });
+  if (r.fb) h += `<div class="card"><b class="${r.fb.ok ? '' : 'err'}">${r.fb.ok ? 'Benar!' : 'Salah.'}</b> Jawaban: ${E(q.ans)}<div style="margin-top:6px"><span class="jp">${E(w.kanji)}</span> ${E(w.furi)}<div>${E(w.arti)}</div><div class="sm">${E(w.kalimat)}<br>${E(w.furiKalimat)}<br>${E(w.artiKalimat)}</div></div></div><button class="p" style="width:100%" data-a="qnext">${r.i + 1 < N ? 'Lanjut' : 'Lihat hasil'}</button>`;
+  return h;
+}
+function resultV() {
+  const r = S.Q.run, N = r.ans.length, ok = r.ans.filter(a => a.ok).length, bad = N - ok;
+  return `<div class="card" style="text-align:center"><div class="num">${Math.round(ok / N * 100)}%</div><div>${ok} benar · ${bad} salah · ${N} soal</div><div class="mu">${r.mode === 'ujian' ? 'Mode ujian' : 'Mode latihan'} · hasil tersimpan</div></div>
+  <div class="row">${bad ? '<button class="p" data-a="qretry">Ulangi yang salah</button>' : ''}<button data-a="qnew">Latihan baru</button><button data-a="home">Beranda</button></div><h3>Pembahasan</h3>` +
+  r.ans.map(a => { const w = byId(a.q.id); return `<div class="card"><b class="${a.ok ? '' : 'err'}">${a.ok ? '✓' : '✗'} ${JN[a.q.t]}</b><div class="jp">${E(w.kanji)}</div><div class="sm">${E(w.furi)} · ${E(w.arti)}</div>${a.q.t === 'tulis' ? '' : `<div>Jawaban benar: <b>${E(a.q.ans)}</b></div>${a.ok ? '' : `<div class="err">Jawabanmu: ${E(a.given)}</div>`}`}<div class="sm">${E(w.kalimat)} — ${E(w.artiKalimat)}</div></div>`; }).join('');
+}
+const vQuiz = () => !S.Q.run ? setupV() : S.Q.run.done ? resultV() : questionV();
+function initCanvas() {
+  const c = $('cv'); if (!c) return; const x = c.getContext('2d'), r = S.Q.run; let cs = null;
+  const draw = () => {
+    x.fillStyle = '#fff'; x.fillRect(0, 0, 320, 320); x.strokeStyle = '#ddd'; x.lineWidth = 1; x.beginPath(); x.moveTo(160, 0); x.lineTo(160, 320); x.moveTo(0, 160); x.lineTo(320, 160); x.stroke();
+    x.strokeStyle = '#222'; x.lineWidth = 5; x.lineCap = 'round'; x.lineJoin = 'round';
+    r.strokes.forEach(s => { x.beginPath(); s.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); if (s.length === 1) x.lineTo(s[0][0] + .1, s[0][1]); x.stroke(); });
+  };
+  const pt = e => { const b = c.getBoundingClientRect(); return [(e.clientX - b.left) * 320 / b.width, (e.clientY - b.top) * 320 / b.height]; };
+  c.onpointerdown = e => { c.setPointerCapture(e.pointerId); cs = [pt(e)]; r.strokes.push(cs); draw(); };
+  c.onpointermove = e => { if (cs) { cs.push(pt(e)); draw(); } };
+  c.onpointerup = c.onpointercancel = () => { cs = null; };
+  draw();
+}
+const bar = (a, b) => `<div style="height:8px;border-radius:6px;background:var(--bd);position:relative;overflow:hidden;margin-top:4px"><div style="position:absolute;inset:0 auto 0 0;width:${b}%;background:var(--pr);opacity:.45"></div><div style="position:absolute;inset:0 auto 0 0;width:${a}%;background:var(--ok)"></div></div>`;
+const dueList = () => Object.values(S.words).flat().filter(w => S.prog[w.id]?.events > 0 && S.prog[w.id].nextReview <= Date.now()).sort((a, b) => S.prog[a.id].nextReview - S.prog[b.id].nextReview);
+function vReview() {
+  const d = dueList(), cnt = {}; Object.values(S.prog).forEach(x => { if (x.events) cnt[x.mastery] = (cnt[x.mastery] || 0) + 1; });
+  const nx = Object.values(S.prog).filter(x => x.events && x.nextReview > Date.now()).map(x => x.nextReview).sort((a, b) => a - b)[0];
+  return `<div class="card" style="text-align:center"><div class="num">${d.length}</div><div class="mu">kotoba perlu diulang sekarang</div>
+  <div class="row"><button class="p" data-a="rvstart" ${d.length ? '' : 'disabled'}>Mulai review (maks. 30)</button></div>
+  ${d.length ? '' : `<p class="mu">${nx ? 'Review berikutnya: ' + new Date(nx).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Belum ada kotoba yang dipelajari. Mulai dari Flashcard atau Latihan.'}</p>`}${S.Q.msg ? `<p class="err">${E(S.Q.msg)}</p>` : ''}</div>
+  <div class="card"><b>Tingkat penguasaan</b>${Object.keys(MS).map(k => `<div class="item" style="cursor:default"><span>${MS[k]}</span><b>${cnt[k] || 0}</b></div>`).join('')}</div>
+  <div class="card"><b>Antrean review</b>${d.slice(0, 20).map(w => `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.arti)}</div></div><span class="tag">Lv ${S.prog[w.id].level}</span></div>`).join('') || '<p class="mu">Kosong.</p>'}</div>`;
+}
+async function startReview() {
+  await loadAll(); const all = Object.values(S.words).flat(), qs = [];
+  for (const w of dueList().slice(0, 30)) for (const t of sh(['arti', 'furigana', 'kalimat', 'kanji'])) { const q = mkQ(w, t, all); if (q) { q.bab = w.bab; qs.push(q); break; } }
+  if (!qs.length) { S.Q.msg = 'Belum ada kotoba yang bisa direview sebagai soal.'; return; }
+  S.Q.run = newRun(sh(qs), 'latihan', 'review'); S.Q.msg = ''; S.tab = 'quiz';
+}
+function vStat() {
+  const all = Object.values(S.words).flat(), P = S.prog, qa = S.ans.filter(a => !a.manual), ok = qa.filter(a => a.benar).length;
+  const grp = fn => { const g = {}; all.forEach(w => { const k = fn(w); const o = g[k.key] = g[k.key] || { l: k.label, t: 0, n: 0, m: 0 }; o.t++; if (P[w.id]?.events) o.n++; if (P[w.id]?.mastery === 'dikuasai') o.m++; }); return Object.keys(g).sort().map(k => g[k]); };
+  const rows = a => a.map(o => `<div style="margin:8px 0"><div class="row" style="margin:0"><span>${E(o.l)}</span><span class="sm" style="text-align:right">${o.m}/${o.t} dikuasai · ${o.n} dipelajari</span></div>${bar(o.m / o.t * 100, o.n / o.t * 100)}</div>`).join('');
+  const days = [...Array(14)].map((_, i) => { const d = new Date(Date.now() - (13 - i) * DAY), k = d.toDateString(), a = qa.filter(x => new Date(x.ts).toDateString() === k); return { l: d.getDate(), n: a.length, c: a.filter(x => x.benar).length }; });
+  const mx = Math.max(1, ...days.map(d => d.n)), pairs = Object.entries(P).filter(([id, x]) => x.wrong > 0 && byId(id)).sort((a, b) => b[1].wrong - a[1].wrong).slice(0, 8);
+  const rv = S.hist.filter(h => h.source === 'review').reduce((n, h) => n + h.total, 0);
+  return `<div class="grid"><div class="card"><div class="num">${Object.values(P).filter(x => x.events).length}</div><div class="mu">Dipelajari (dari ${all.length})</div></div>
+  <div class="card"><div class="num">${Object.values(P).filter(x => x.mastery === 'dikuasai').length}</div><div class="mu">Dikuasai</div></div>
+  <div class="card"><div class="num">${qa.length ? Math.round(ok / qa.length * 100) + '%' : '–'}</div><div class="mu">Akurasi (${qa.length} jawaban)</div></div>
+  <div class="card"><div class="num">${S.hist.length}</div><div class="mu">Sesi latihan · ${rv} soal review</div></div></div>
+  <div class="card"><b>Jawaban 14 hari terakhir</b><div style="display:flex;gap:4px;align-items:flex-end;height:90px;margin-top:8px">${days.map(d => `<div style="flex:1;text-align:center"><div style="height:${Math.max(2, d.n / mx * 70)}px;background:var(--no);opacity:.7;border-radius:4px;position:relative;overflow:hidden"><div style="position:absolute;bottom:0;left:0;right:0;height:${d.n ? d.c / d.n * 100 : 0}%;background:var(--ok)"></div></div><div class="sm">${d.l}</div></div>`).join('')}</div><div class="sm">Hijau = benar, merah = salah</div></div>
+  <div class="card"><b>Riwayat nilai</b>${S.hist.slice(-10).reverse().map(h => `<div style="margin:6px 0"><div class="row" style="margin:0"><span class="sm">${new Date(h.ts).toLocaleDateString('id-ID')} · ${h.mode}</span><b style="text-align:right">${Math.round(h.benar / h.total * 100)}%</b></div>${bar(h.benar / h.total * 100, 0)}</div>`).join('') || '<p class="mu">Belum ada.</p>'}</div>
+  <div class="card"><b>Per buku</b>${rows(grp(w => ({ key: w.book, label: w.book })))}</div>
+  <div class="card"><b>Per bab</b>${rows(grp(w => ({ key: w.book + ('0' + bn(w.bab)).slice(-2), label: w.book + ' ' + w.bab })))}</div>
+  <div class="card"><b>Per kategori</b>${rows(grp(w => ({ key: w.kategori, label: w.kategori })))}</div>
+  <div class="card"><b>Sering salah</b>${pairs.map(([id, x]) => { const w = byId(id); return `<div class="item" data-a="det" data-v="${id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.arti)}</div></div><span class="tag">${x.wrong}× salah</span></div>`; }).join('') || '<p class="mu">Belum ada kesalahan.</p>'}</div>
+  <div class="card"><b>Cadangan progres Guest</b><p class="mu">Simpan file ini secara berkala. Menghapus data situs/browser menghapus progres Guest.</p><button class="p" data-a="export">Ekspor cadangan (JSON)</button></div>`;
+}
+function exportBackup() {
+  const b = new Blob([JSON.stringify({ app: 'irodori', version: 1, exportedAt: Date.now(), marks: S.marks, favs: S.favs, answers: S.ans, history: S.hist, target: S.target })], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'irodori-cadangan-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+// ---- Akun, sinkronisasi, pengaturan ----
+Object.assign(S, { sync: { busy: false, last: 0, msg: '' }, msgA: '', set: { theme: 'auto', n: '10', mode: 'latihan' }, setTs: 0, favOff: {}, sprog: null, auth: null, owner: null });
+const applyTheme = () => { host.dataset.t = S.set.theme === 'auto' ? '' : S.set.theme; };
+function rebuildProg() {   // login: dasar = progres server + jawaban yang belum terkirim; Guest: semua jawaban lokal
+  const srv = S.auth && S.sprog; S.prog = srv ? JSON.parse(JSON.stringify(S.sprog)) : {};
+  (srv ? S.ans.filter(a => !a.sy) : S.ans).slice().sort((a, b) => a.ts - b.ts).forEach(a => { S.prog[a.wordId] = srsApply(S.prog[a.wordId] || srsNew(), { ok: a.benar, ts: a.ts, manual: a.manual || '' }); });
+}
+function touchSet() { S.setTs = Date.now(); kvSet('set', S.set); kvSet('setts', S.setTs); autoSync(); }
+function autoSync() { if (S.auth && !S.sync.busy) { clearTimeout(S._t); S._t = setTimeout(() => syncNow(true), 4000); } }
+async function wipeLocal() {
+  await tx('answers', 'readwrite', st => { st.clear(); });
+  Object.assign(S, { ans: [], prog: {}, marks: {}, favs: {}, favOff: {}, stat: {}, hist: [], sprog: null, owner: null });
+  for (const k of ['marks', 'favs', 'favoff', 'stat']) await kvSet(k, {}); await kvSet('hist', []); await kvSet('sprog', null); await kvSet('owner', null);
+}
+async function syncNow(quiet) {
+  if (!S.auth || S.sync.busy) return; S.sync.busy = true; S.sync.msg = ''; if (!quiet) render();
+  try {
+    const pend = S.ans.filter(a => !a.sy), pendH = S.hist.filter(h => !h.sy);
+    const cl = a => ({ answerId: a.answerId, wordId: a.wordId, benar: a.benar, ts: a.ts, jenis: a.jenis, sessionId: a.sessionId || '', manual: a.manual || '' });
+    const chunks = []; for (let i = 0; i < pend.length; i += 500) chunks.push(pend.slice(i, i + 500));
+    const last = chunks.pop() || [];
+    for (const c of chunks) await api('submitAnswers', { answers: c.map(cl) });
+    const favorites = [...Object.entries(S.favs).map(([id, ts]) => ({ wordId: id, active: true, ts })), ...Object.entries(S.favOff).map(([id, ts]) => ({ wordId: id, active: false, ts }))];
+    const body = { syncId: 's-' + uid(), answers: last.map(cl), favorites,
+      history: pendH.map(h => ({ sessionId: h.sessionId, ts: h.ts, mode: h.mode, source: h.source || 'manual', jenis: h.jenis, total: h.total, benar: h.benar, durasi: h.durasi })) };
+    if (S.setTs) { body.settings = { target: S.target, ...S.set }; body.settingsUpdatedAt = S.setTs; }
+    const r = (await api('syncGuest', body)).server;      // data Guest/lokal baru ditandai terkirim SETELAH server menjawab sukses
+    pend.forEach(a => { a.sy = 1; }); await tx('answers', 'readwrite', st => { pend.forEach(a => st.put(a)); });
+    pendH.forEach(h => { h.sy = 1; });
+    const sp = {}; r.progress.forEach(x => { sp[x.wordId] = x; }); S.sprog = sp; await kvSet('sprog', sp);
+    const hs = new Set(S.hist.map(h => h.sessionId)); r.history.forEach(h => { if (!hs.has(h.sessionId)) S.hist.push({ ...h, sy: 1 }); });
+    S.hist.sort((a, b) => a.ts - b.ts); await kvSet('hist', S.hist);
+    r.favorites.forEach(f => { const lt = Math.max(S.favs[f.wordId] || 0, S.favOff[f.wordId] || 0); if (f.ts > lt) { if (f.active) { S.favs[f.wordId] = f.ts; delete S.favOff[f.wordId]; } else { S.favOff[f.wordId] = f.ts; delete S.favs[f.wordId]; } } });
+    await kvSet('favs', S.favs); await kvSet('favoff', S.favOff);
+    if (r.settings && r.settings.updatedAt > S.setTs) { const d = r.settings.data; if (d.target) S.target = d.target; S.set = { theme: d.theme || 'auto', n: d.n || '10', mode: d.mode || 'latihan' }; S.setTs = r.settings.updatedAt; S.Q.cfg.n = S.set.n; S.Q.cfg.mode = S.set.mode; applyTheme(); await kvSet('set', S.set); await kvSet('setts', S.setTs); await kvSet('target', S.target); }
+    rebuildProg(); S.marks = {}; Object.entries(S.prog).forEach(([id, x]) => { if (x.mastery === 'dikuasai') S.marks[id] = 'm'; else if (x.mastery === 'perlu_diulang') S.marks[id] = 'r'; }); await kvSet('marks', S.marks);
+    S.sync.last = Date.now();
+  } catch (e) {
+    if (e.code === 'UNAUTHORIZED') { S.auth = null; await kvSet('auth', null); S.msgA = 'Sesi berakhir, silakan masuk lagi. Data di perangkat ini tetap aman.'; }
+    else S.sync.msg = 'Gagal sinkron: ' + e.message;
+  }
+  S.sync.busy = false; if (S.tab !== 'quiz') render();
+}
+async function doAuth(action, data) {
+  S.msgA = 'Memproses…'; render();
+  try {
+    const r = await api(action, data);
+    if (S.owner && S.owner !== r.user.userId) {
+      if (!confirm('Data di browser ini milik akun lain dan akan dihapus. Lanjutkan masuk?')) { S.msgA = 'Dibatalkan.'; return render(); }
+      await wipeLocal();
+    }
+    S.owner = r.user.userId; await kvSet('owner', S.owner); S.auth = { token: r.token, user: r.user, expiresAt: r.expiresAt }; await kvSet('auth', S.auth);
+    S.msgA = ''; await syncNow();
+    S.msgA = S.sync.msg ? '' : 'Berhasil masuk. Progres tersinkron.';
+  } catch (e) { S.msgA = 'Gagal: ' + e.message; }
+  render();
+}
+async function logout() {
+  if (!confirm('Keluar? Progres disinkronkan dulu, lalu data lokal dihapus dari perangkat ini.')) return;
+  await syncNow(); if (S.sync.msg && !confirm('Sinkronisasi gagal. Data yang belum terkirim akan hilang. Tetap keluar?')) return;
+  try { await api('logout', {}); } catch (e) { /* sesi tetap dihapus di perangkat */ }
+  await wipeLocal(); S.auth = null; await kvSet('auth', null); S.msgA = 'Anda sudah keluar.'; render();
+}
+async function importBackup(f) {
+  const j = JSON.parse(await f.text()); if (j.app !== 'irodori' || !Array.isArray(j.answers)) throw new Error('File bukan cadangan Irodori.');
+  const have = new Set(S.ans.map(a => a.answerId)), add = [];
+  j.answers.forEach(a => { if (a && a.answerId && a.wordId && typeof a.ts === 'number' && !have.has(a.answerId)) { have.add(a.answerId); const e = { ...a }; delete e.sy; add.push(e); } });
+  await tx('answers', 'readwrite', st => { add.forEach(e => st.put(e)); }); S.ans.push(...add); rebuildProg();
+  const hs = new Set(S.hist.map(h => h.sessionId)); (j.history || []).forEach(h => { if (h && h.sessionId && !hs.has(h.sessionId)) { const e = { ...h }; delete e.sy; S.hist.push(e); } });
+  S.hist.sort((a, b) => a.ts - b.ts); await kvSet('hist', S.hist);
+  Object.entries(j.marks || {}).forEach(([k, v]) => { if (!S.marks[k]) S.marks[k] = v; }); await kvSet('marks', S.marks);
+  Object.entries(j.favs || {}).forEach(([k, v]) => { if (!S.favs[k] && !S.favOff[k]) S.favs[k] = v; }); await kvSet('favs', S.favs);
+  autoSync(); return add.length;
+}
+function initGoogle() {
+  if (S.auth || GOOGLE_CLIENT_ID.startsWith('GANTI') || !$('gbtn')) return;
+  const go = () => { google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: r => doAuth('loginGoogle', { idToken: r.credential }) }); google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'large', text: 'signin_with' }); };
+  if (window.google?.accounts) return go();
+  if (!document.getElementById('gsi')) { const sc = document.createElement('script'); sc.id = 'gsi'; sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = () => { if ($('gbtn')) go(); }; document.head.appendChild(sc); }
+}
+function vSet() {
+  const A = S.auth, pend = S.ans.filter(a => !a.sy).length, y = S.set, b = (a, v, l, on) => `<button class="${on ? 'on' : ''}" data-a="${a}" data-v="${v}">${l}</button>`;
+  const acc = A ? `<div class="card"><b>Akun</b><p>${E(A.user.displayName)} <span class="tag">${A.user.authType === 'google' ? 'Google · ' + E(A.user.email) : '@' + E(A.user.username)}</span></p>
+    <div class="mu">${S.sync.busy ? 'Menyinkronkan…' : S.sync.msg ? E(S.sync.msg) : S.sync.last ? 'Terakhir sinkron: ' + new Date(S.sync.last).toLocaleString('id-ID') : 'Belum sinkron pada sesi ini'} · ${pend} jawaban belum terkirim</div>
+    <div class="row"><button class="p" data-a="sync">Sinkronkan sekarang</button><button data-a="logout">Keluar</button></div></div>`
+  : `<div class="card"><b>Akun</b><p class="mu">Anda memakai mode Guest. Masuk agar progres tersinkron antar perangkat; progres Guest di browser ini akan digabungkan ke akun.</p>
+    <input id="lu" placeholder="Username" autocapitalize="none" autocomplete="username"><input id="lp" type="password" placeholder="Password (minimal 8 karakter)" autocomplete="current-password"><input id="ld" placeholder="Nama tampilan (opsional, saat daftar)">
+    <div class="row"><button class="p" data-a="login">Masuk</button><button data-a="register">Daftar</button></div><div id="gbtn" style="margin-top:12px"></div>
+    ${GOOGLE_CLIENT_ID.startsWith('GANTI') ? '<p class="mu">Login Google belum dikonfigurasi (isi GOOGLE_CLIENT_ID).</p>' : ''}</div>`;
+  return (S.msgA ? `<div class="card ${S.msgA.startsWith('Gagal') ? 'err' : ''}">${E(S.msgA)}</div>` : '') + acc +
+  `<div class="card"><b>Preferensi</b><div class="mu" style="margin-top:8px">Target belajar harian (aktivitas)</div><input id="stg" type="number" min="1" value="${S.target}">
+  <div class="mu">Tema</div><div class="chips">${b('th', 'auto', 'Otomatis', y.theme === 'auto')}${b('th', 'light', 'Terang', y.theme === 'light')}${b('th', 'dark', 'Gelap', y.theme === 'dark')}</div>
+  <div class="mu">Jumlah soal bawaan</div><div class="chips">${['10', '20', '30'].map(n => b('sd', 'n=' + n, n, y.n === n)).join('')}</div>
+  <div class="mu">Mode bawaan</div><div class="chips">${b('sd', 'mode=latihan', 'Latihan', y.mode === 'latihan')}${b('sd', 'mode=ujian', 'Ujian', y.mode === 'ujian')}</div>
+  <div class="mu">Pilihan buku terakhir diingat otomatis.</div></div>
+  <div class="card"><b>Cadangan progres</b><p class="mu">Ekspor menyimpan jawaban, riwayat, dan favorit ke file. Impor menggabungkan file ke data di perangkat ini tanpa menggandakan.</p>
+  <div class="row"><button data-a="export">Ekspor (JSON)</button></div><input id="imp" type="file" accept=".json,application/json" style="margin-top:8px"></div>` + (A ? (S.delOpen
+    ? `<div class="card" style="border-color:var(--no)"><b class="err">Hapus akun permanen</b><p class="mu">Seluruh data akun ini (progres, riwayat, favorit, pengaturan) dihapus dari server dan perangkat ini. Tindakan ini TIDAK bisa dibatalkan. Sebaiknya ekspor cadangan dulu.</p>
+      ${A.user.authType === 'password' ? '<input id="dp" type="password" placeholder="Password saat ini" autocomplete="current-password">' : ''}<input id="dc" placeholder="Ketik HAPUS untuk konfirmasi" autocapitalize="characters">
+      <div class="row"><button data-a="delcancel">Batal</button><button class="danger" data-a="delok">Hapus permanen</button></div></div>`
+    : `<button class="danger" style="width:100%;margin-top:6px" data-a="delopen">Hapus akun</button>`) : '');
+}
+const IC = { home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>', materi: '<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>',
+  card: '<rect x="3" y="7" width="14" height="13" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v11"/>', quiz: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  more: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  review: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>', stat: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', set: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>' };
+const svg = k => `<svg viewBox="0 0 24 24">${IC[k]}</svg>`;
+const TT = { home: 'Beranda', materi: 'Materi', card: 'Flashcard', quiz: 'Latihan', review: 'Review', stat: 'Statistik', set: 'Setelan' };
+const dueCount = () => Object.values(S.prog).filter(x => x.events > 0 && x.nextReview <= Date.now()).length;
+function refreshList() { if (S.tab === 'materi' && $('lst')) $('lst').innerHTML = listHTML(); else if (S.tab === 'card' && $('cb')) { buildDeck(); $('cb').innerHTML = cardBody(); } }
+function moreSheet() {
+  const d = dueCount(), row = (k, l, sub) => `<button class="mrow" data-a="tab" data-v="${k}">${svg(k)}<span><b>${l}</b><br><span class="sm">${sub}</span></span></button>`;
+  $('m').innerHTML = `<div class="modal" data-a="close"><div class="sheet"><b style="font-size:18px">Menu lainnya</b><div style="margin-top:14px">${row('review', 'Review', d ? d + ' kotoba perlu diulang' : 'Belum ada yang jatuh tempo')}${row('stat', 'Statistik', 'Perkembangan belajar dan cadangan')}${row('set', 'Setelan', 'Akun, sinkronisasi, tema')}</div></div></div>`;
+}
+Object.assign(S, { cats: [], catOpen: false, delOpen: false });
+const catOK = w => !S.cats.length || S.cats.includes(w.kategori);
+function catUI() {
+  const n = S.cats.length;
+  return `<button style="width:100%;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center" data-a="cgo"><span>Kategori: ${n ? n + ' dipilih' : 'Semua'}</span><span>${S.catOpen ? '▴' : '▾'}</span></button>` +
+    (S.catOpen ? `<div class="chips" style="margin-top:0">${cats().map(c => `<button class="${S.cats.includes(c) ? 'on' : ''}" data-a="cg" data-v="${E(c)}">${E(c)}</button>`).join('')}${n ? '<button data-a="cgx">Reset</button>' : ''}</div>` : '');
+}
+// ---- Pengecoh furigana: bacaan benar diacak (hanya hiragana), akhiran tetap sama ----
+const KROW = ['あいうえお', 'かきくけこ', 'がぎぐげご', 'さしすせそ', 'ざじずぜぞ', 'たちつてと', 'だぢづでど', 'なにぬねの', 'はひふへほ', 'ばびぶべぼ', 'ぱぴぷぺぽ', 'まみむめも', 'らりるれろ', 'やゆよ', 'わを'];
+const VOI = [['かきくけこ', 'がぎぐげご'], ['さしすせそ', 'ざじずぜぞ'], ['たちつてと', 'だぢづでど'], ['はひふへほ', 'ばびぶべぼ']];
+const rnd = n => Math.floor(Math.random() * n), pick = a => a[rnd(a.length)];
+function mutateKana(c) {
+  c = c.slice(); const op = rnd(6), i = rnd(c.length), ch = c[i];
+  if (op === 0) { const k = c.findIndex((x, j) => j > 0 && 'ういー'.includes(x)); if (k > 0) { c.splice(k, 1); return c; } if (c.length > 2) { c.splice(i, 1); return c; } return null; }
+  if (op === 1) { c.splice(i + 1, 0, pick(['う', 'い', 'っ', 'ん'])); return c; }
+  if (op === 2) { const sm = 'ゃゅょ', fu = 'やゆよ', a = sm.indexOf(ch), b = fu.indexOf(ch); if (a >= 0) { c[i] = Math.random() < .5 ? fu[a] : sm[(a + 1 + rnd(2)) % 3]; return c; } if (b >= 0 && i > 0) { c[i] = sm[b]; return c; } return null; }
+  if (op === 3) { for (const [u, v] of VOI) { const k = u.indexOf(ch); if (k >= 0) { c[i] = v[k]; return c; } const k2 = v.indexOf(ch); if (k2 >= 0) { c[i] = u[k2]; return c; } } return null; }
+  if (op === 4) { const row = KROW.find(r => r.includes(ch)); if (!row) return null; c[i] = pick([...row].filter(x => x !== ch)); return c; }
+  if (c.length > 1 && i < c.length - 1 && c[i] !== c[i + 1]) { [c[i], c[i + 1]] = [c[i + 1], c[i]]; return c; }
+  return null;
+}
+function furiOpts(f) {
+  if (f.replace(/^[～~〜]/, '').length < 2) return null;   // bacaan 1 huruf: pakai pengecoh dari kata lain
+  let pre = '', body = f;
+  if (/^[～~〜]/.test(body)) { pre = body[0]; body = body.slice(1); }
+  const tm = /(ませんでした|ました|ません|ます|なかった|ない)$/.exec(body);
+  let tail = tm ? tm[0] : ''; if (tail) body = body.slice(0, -tail.length);
+  else if (body.length > 1) { tail = body.slice(-1); body = body.slice(0, -1); }   // huruf akhir (な, く, い, る, ん, dst.) tetap sama di semua pilihan
+  if (!body || !/^[\u3041-\u309f\u30fc]+$/.test(body + tail)) return null;          // bukan hiragana murni -> pakai cara lama
+  const seen = new Set([body]), out = [];
+  for (let t = 0; t < 150 && out.length < 3; t++) { const m = mutateKana(body.split('')); if (!m) continue; const x = m.join(''); if (x && !seen.has(x)) { seen.add(x); out.push(x); } }
+  return out.length === 3 ? sh([f, ...out.map(x => pre + x + tail)]) : null;
+}
+async function deleteAccount() {
+  const pw = $('dp') ? $('dp').value : '', cf = $('dc').value.trim();
+  if (cf !== 'HAPUS') { S.msgA = 'Gagal: ketik HAPUS (huruf besar) untuk konfirmasi.'; return render(); }
+  S.msgA = 'Menghapus akun…'; render();
+  try {
+    await api('deleteAccount', { confirm: cf, password: pw });
+    await wipeLocal(); S.auth = null; await kvSet('auth', null); S.delOpen = false; S.msgA = 'Akun dan seluruh datanya sudah dihapus permanen.';
+  } catch (e) { S.msgA = 'Gagal: ' + e.message; }
+  render();
+}
+function render() {
+  const t = { home: 'Beranda', materi: 'Materi', card: 'Flashcard', quiz: 'Latihan', review: 'Review', stat: 'Statistik', set: 'Setelan' };
+  $('hd').innerHTML = 'Irodori <small>' + (TT[S.tab] || '') + '</small>';
+  const d = dueCount(); $('nav').innerHTML = [['home', 'Beranda'], ['materi', 'Materi'], ['card', 'Kartu'], ['quiz', 'Latihan']].map(([k, l]) => `<button class="${S.tab === k ? 'on' : ''}" data-a="tab" data-v="${k}">${svg(k)}<span>${l}</span></button>`).join('') +
+    `<button class="${['review', 'stat', 'set'].includes(S.tab) ? 'on' : ''}" data-a="menu">${svg('more')}<span>Lainnya</span>${d ? `<i class="dot">${d > 99 ? '99+' : d}</i>` : ''}</button>`;
+  $('v').innerHTML = S.loading ? '<p class="mu">Memuat materi…</p>' : S.err ? `<div class="card err">Gagal memuat: ${E(S.err)}</div>` :
+    S.tab === 'home' ? vHome() : S.tab === 'materi' ? vMateri() : S.tab === 'quiz' ? vQuiz() : S.tab === 'review' ? vReview() : S.tab === 'stat' ? vStat() : S.tab === 'set' ? vSet() : vCard();
+  if (S.tab === 'quiz') initCanvas();
+  if (S.tab === 'set') initGoogle();
+}
+R.addEventListener('click', async e => {
+  const el = e.target.closest('[data-a]'); if (!el || el.matches('select,input')) return;   // jangan render ulang saat memilih dropdown
+  if (el.classList.contains('modal') && e.target !== el) return;   // klik di dalam kotak tidak menutup
+  const a = el.dataset.a, v = el.dataset.v, F = S.F;
+  if (a === 'tab') { $('m').innerHTML = ''; S.tab = v; S.shown = 80; if (v === 'review' || v === 'stat') { S.loading = true; render(); try { await loadAll(); } catch (x) { S.err = x.message; } S.loading = false; } if (v === 'card') buildDeck(); }
+  else if (a === 'book') { S.sel = S.sel.includes(v) ? S.sel.filter(x => x !== v) : S.sel.concat(v); if (!S.sel.length) S.sel = [v]; kvSet('sel', S.sel); S.bab = ''; S.cats = []; S.loading = true; render(); await loadWords(); S.loading = false; if (S.tab === 'card') buildDeck(); }
+  else if (a === 'more') S.shown += 80;
+  else if (a === 'det') return detail(v);
+  else if (a === 'close') $('m').innerHTML = '';
+  else if (a === 'dm') { const [id, t] = v.split('|'); await mark(id, t); detail(id); render(); return; }
+  else if (a === 'df') { await fav(v); detail(v); render(); return; }
+  else if (a === 'flip') F.flip = !F.flip;
+  else if (a === 'next') { F.i++; F.flip = false; } else if (a === 'prev') { F.i--; F.flip = false; }
+  else if (a === 'shuf') { F.shuffle = !F.shuffle; buildDeck(); } else if (a === 'deck') buildDeck();
+  else if (a === 'mk') { await mark(F.deck[F.i], v); if (F.i < F.deck.length - 1) { F.i++; F.flip = false; } }
+  else if (a === 'qj') { const j = S.Q.cfg.jenis; S.Q.cfg.jenis = j.includes(v) ? (j.length > 1 ? j.filter(x => x !== v) : j) : j.concat(v); }
+  else if (a === 'qc') { const [k, val] = v.split('='); S.Q.cfg[k] = val === 'true' ? true : val === 'false' ? false : val; }
+  else if (a === 'qstart') startQ();
+  else if (a === 'pick') { const r = S.Q.run, q = r.qs[r.i]; answer(q.o[+v] === q.ans, q.o[+v]); }
+  else if (a === 'qnext') next();
+  else if (a === 'tgrade') answer(v === '1', '');
+  else if (a === 'treveal') S.Q.run.reveal = true;
+  else if (a === 'tclear') S.Q.run.strokes = [];
+  else if (a === 'tundo') S.Q.run.strokes.pop();
+  else if (a === 'qstop') { if (confirm('Hentikan sesi ini? Jawaban yang sudah masuk tetap tersimpan.')) S.Q.run = null; }
+  else if (a === 'qretry') retryQ();
+  else if (a === 'qnew') S.Q.run = null;
+  else if (a === 'home') { S.tab = 'home'; S.Q.run = null; }
+  else if (a === 'login') return doAuth('loginPassword', { username: $('lu').value, password: $('lp').value });
+  else if (a === 'register') return doAuth('register', { username: $('lu').value, password: $('lp').value, displayName: $('ld').value });
+  else if (a === 'sync') { await syncNow(); return; }
+  else if (a === 'logout') return logout();
+  else if (a === 'th') { S.set.theme = v; applyTheme(); touchSet(); }
+  else if (a === 'sd') { const [k, val] = v.split('='); S.set[k] = val; S.Q.cfg[k] = val; touchSet(); }
+  else if (a === 'cg') { S.cats = S.cats.includes(v) ? S.cats.filter(x => x !== v) : S.cats.concat(v); S.shown = 80; if (S.tab === 'card') buildDeck(); }
+  else if (a === 'cgo') S.catOpen = !S.catOpen;
+  else if (a === 'cgx') { S.cats = []; S.shown = 80; if (S.tab === 'card') buildDeck(); }
+  else if (a === 'delopen') S.delOpen = true;
+  else if (a === 'delcancel') S.delOpen = false;
+  else if (a === 'delok') return deleteAccount();
+  else if (a === 'menu') { moreSheet(); return; }
+  else if (a === 'rvstart') await startReview();
+  else if (a === 'tg') { S.target = Math.max(5, S.target + Number(v)); kvSet('target', S.target); }
+  else if (a === 'export') { exportBackup(); return; }
+  else if (a === 'favc') await fav(F.deck[F.i]);
+  render();
+});
+R.addEventListener('change', e => { const a = e.target.dataset.a; if (a === 'bab') { S[a] = e.target.value; S.shown = 80; if (S.tab === 'card') buildDeck(); render(); } });
+R.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; S.shown = 80; if (!e.isComposing) refreshList(); } });
+R.addEventListener('compositionend', e => { if (e.target.id === 'q') { S.q = e.target.value; S.shown = 80; refreshList(); } });
+R.addEventListener('change', e => { if (e.target.dataset.a === 'qsel') S.Q.cfg[e.target.dataset.k] = e.target.value; });
+R.addEventListener('input', e => { if (e.target.id === 'qcustom') S.Q.cfg.custom = e.target.value; });
+R.addEventListener('change', async e => {
+  if (e.target.id === 'stg') { S.target = Math.max(1, Number(e.target.value) || 20); kvSet('target', S.target); touchSet(); }
+  if (e.target.id === 'imp' && e.target.files[0]) { try { S.msgA = 'Impor selesai: ' + await importBackup(e.target.files[0]) + ' jawaban baru digabungkan.'; } catch (x) { S.msgA = 'Gagal: ' + x.message; } render(); }
+});
+init();
+})();
+</script>
+<!-- SELESAI SALIN -->
+</body></html>
