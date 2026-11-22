@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="id" data-irodori="1"><head><meta charset="utf-8">
+<html lang="id" data-app="1"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Irodori Learning</title>
+<title>Benkyō shimasho</title>
 <meta name="theme-color" content="#f5f6fa" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0f1218" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Belajar kosakata dan kanji bahasa Jepang (Irodori)">
+<meta name="description" content="Belajar kosakata dan kanji bahasa Jepang">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Irodori"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Ayo Benkyō"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>html,body{margin:0;min-height:100%}</style>
 </head><body>
 <!-- MULAI SALIN DARI SINI -->
-<div id="irodori-host"></div>
+<div id="app-host"></div>
 <script>
 (function () {
 const CSS = `:host{display:block;--bg:#f5f6fa;--card:#fff;--tx:#1b2030;--mu:#677086;--pr:#4263eb;--pr2:#edf1ff;--onp:#fff;--ok:#2f9e44;--no:#e03131;--bd:#e6e9f1;--sh:0 6px 24px rgba(20,30,60,.07)}
@@ -43,9 +43,10 @@ nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-
 nav button.on{background:var(--pr2);color:var(--pr)}
 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
 .dot{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:var(--no);color:#fff;font-size:10px;font-style:normal;line-height:17px;padding:0 4px}
+.sheet{position:relative}.sheet ol{padding-left:20px;margin:10px 0}.sheet li{margin:6px 0}.x{position:absolute;top:12px;right:12px;width:40px;min-height:40px;padding:0;border-radius:50%;font-size:18px;line-height:1}
 .mrow{display:flex;gap:14px;align-items:center;width:100%;text-align:left;margin:0 0 10px;padding:14px;height:auto;line-height:1.4}.mrow svg{width:26px;height:26px;stroke:var(--pr)}`;
-const host = document.getElementById('irodori-host'), R = host.attachShadow({ mode: 'open' });
-R.innerHTML = `<style>${CSS}</style><div id="shell"><header id="hd">Irodori</header><main id="v"></main><nav id="nav"></nav><div id="m"></div></div>`;
+const host = document.getElementById('app-host'), R = host.attachShadow({ mode: 'open' });
+R.innerHTML = `<style>${CSS}</style><div id="shell"><header id="hd">Ayo Benkyō</header><main id="v"></main><nav id="nav"></nav><div id="m"></div><div id="pw"></div></div>`;
 const $ = id => R.getElementById(id);
 // ====== KONFIGURASI: tempel URL Web App Apps Script (berakhiran /exec) ======
 const API_URL = 'https://script.google.com/macros/s/AKfycbw-2oEVc96DWzxAhxEBOyE1y2SONmi5PMiAjYQtwQJ3CYEHkvGV1CEQyVLogA3yVa1qWg/exec';
@@ -70,11 +71,29 @@ async function api(action, data) {   // materi: simpan salinan; jika offline pak
   }
 }
 // ---- IndexedDB (data Guest) ----
+// Pemindahan satu kali dari nama database lama (agar progres yang sudah tersimpan tidak hilang). Boleh dihapus setelah semua perangkat membuka aplikasi sekali.
+const LEGACY_DB = 'irodori';
+async function migrateLegacy(db) {
+  try {
+    if (localStorage.getItem('bk-mig')) return;
+    const cnt = (d, st) => new Promise(r => { const q = d.transaction(st).objectStore(st).count(); q.onsuccess = () => r(q.result); q.onerror = () => r(0); });
+    if ((await cnt(db, 'kv')) + (await cnt(db, 'answers')) === 0) {
+      const old = await new Promise((res, rej) => { const q = indexedDB.open(LEGACY_DB); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+      if (old.objectStoreNames.contains('kv') && old.objectStoreNames.contains('answers')) {
+        const all = st => new Promise(r => { const q = old.transaction(st).objectStore(st).getAll(); q.onsuccess = () => r(q.result); });
+        const kv = await all('kv'), an = await all('answers');
+        await new Promise((res, rej) => { const t = db.transaction(['kv', 'answers'], 'readwrite'); kv.forEach(x => t.objectStore('kv').put(x)); an.forEach(x => t.objectStore('answers').put(x)); t.oncomplete = res; t.onerror = () => rej(t.error); });
+      }
+      old.close(); indexedDB.deleteDatabase(LEGACY_DB);
+    }
+    localStorage.setItem('bk-mig', '1');
+  } catch (e) { /* gagal: data lama tetap utuh */ }
+}
 const idb = new Promise((res, rej) => {
-  const q = indexedDB.open('irodori', 1);
+  const q = indexedDB.open('benkyo', 1);
   q.onupgradeneeded = () => { q.result.createObjectStore('kv', { keyPath: 'k' }); q.result.createObjectStore('answers', { keyPath: 'answerId' }); };
   q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
-});
+}).then(async db => { await migrateLegacy(db); return db; });
 const tx = async (st, mode, fn) => { const d = await idb; return new Promise((res, rej) => { const t = d.transaction(st, mode), r = fn(t.objectStore(st)); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
 const kvGet = async k => (await tx('kv', 'readonly', s => s.get(k))) ?.v;
 const kvSet = (k, v) => tx('kv', 'readwrite', s => s.put({ k, v }));
@@ -84,6 +103,7 @@ const S = { tab: 'home', books: [], sel: [], words: {}, bab: '', cat: '', q: '',
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
 const sessionId = 'g-' + uid().slice(0, 12);
 async function init() {
+  S.pwa.installed = !!(await kvGet('pwinstalled')); S.pwa.snooze = (await kvGet('pwsnooze')) || 0; S.pwa.never = !!(await kvGet('pwnever')); if (standalone()) markInstalled();
   try { navigator.storage?.persist?.(); } catch (e) { /* minta penyimpanan permanen agar progres Guest tidak mudah terhapus */ }
   S.marks = (await kvGet('marks')) || {}; S.favs = (await kvGet('favs')) || {}; S.stat = (await kvGet('stat')) || {}; S.hist = (await kvGet('hist')) || []; S.target = (await kvGet('target')) || 20;
   S.ans = (await tx('answers', 'readonly', st => st.getAll())) || []; S.prog = {};
@@ -95,7 +115,7 @@ async function init() {
     const sv = await kvGet('sel'); if (sv && sv.every(id => ver.books.some(b => b.id === id && b.count))) S.sel = sv;
     await loadWords();
   } catch (e) { S.err = e.message; }
-  S.loading = false; render(); if (S.auth) syncNow(true);
+  S.loading = false; render(); if (S.auth) syncNow(true); setTimeout(showPwa, 3000);
 }
 async function loadWords() {
   for (const b of S.sel) if (!S.words[b]) S.words[b] = (await api('getWords', { books: [b] })).words;
@@ -328,12 +348,12 @@ function vStat() {
   <div class="card"><b>Cadangan progres Guest</b><p class="mu">Simpan file ini secara berkala. Menghapus data situs/browser menghapus progres Guest.</p><button class="p" data-a="export">Ekspor cadangan (JSON)</button></div>`;
 }
 function exportBackup() {
-  const b = new Blob([JSON.stringify({ app: 'irodori', version: 1, exportedAt: Date.now(), marks: S.marks, favs: S.favs, answers: S.ans, history: S.hist, target: S.target })], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'irodori-cadangan-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const b = new Blob([JSON.stringify({ app: 'benkyo', version: 1, exportedAt: Date.now(), marks: S.marks, favs: S.favs, answers: S.ans, history: S.hist, target: S.target })], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'benkyo-cadangan-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 // ---- Akun, sinkronisasi, pengaturan ----
 Object.assign(S, { sync: { busy: false, last: 0, msg: '' }, msgA: '', set: { theme: 'auto', n: '10', mode: 'latihan' }, setTs: 0, favOff: {}, sprog: null, auth: null, owner: null });
-const applyTheme = () => { host.dataset.t = S.set.theme === 'auto' ? '' : S.set.theme; if (document.documentElement.dataset.irodori) document.documentElement.style.background = getComputedStyle(host).getPropertyValue('--bg'); };
+const applyTheme = () => { host.dataset.t = S.set.theme === 'auto' ? '' : S.set.theme; if (document.documentElement.dataset.app) document.documentElement.style.background = getComputedStyle(host).getPropertyValue('--bg'); };
 function rebuildProg() {   // login: dasar = progres server + jawaban yang belum terkirim; Guest: semua jawaban lokal
   const srv = S.auth && S.sprog; S.prog = srv ? JSON.parse(JSON.stringify(S.sprog)) : {};
   (srv ? S.ans.filter(a => !a.sy) : S.ans).slice().sort((a, b) => a.ts - b.ts).forEach(a => { S.prog[a.wordId] = srsApply(S.prog[a.wordId] || srsNew(), { ok: a.benar, ts: a.ts, manual: a.manual || '' }); });
@@ -397,7 +417,7 @@ async function logout() {
   await wipeLocal(); S.auth = null; await kvSet('auth', null); S.msgA = 'Anda sudah keluar.'; render();
 }
 async function importBackup(f) {
-  const j = JSON.parse(await f.text()); if (j.app !== 'irodori' || !Array.isArray(j.answers)) throw new Error('File bukan cadangan Irodori.');
+  const j = JSON.parse(await f.text()); if (!Array.isArray(j.answers)) throw new Error('File bukan file cadangan aplikasi ini.');
   const have = new Set(S.ans.map(a => a.answerId)), add = [];
   j.answers.forEach(a => { if (a && a.answerId && a.wordId && typeof a.ts === 'number' && !have.has(a.answerId)) { have.add(a.answerId); const e = { ...a }; delete e.sy; add.push(e); } });
   await tx('answers', 'readwrite', st => { add.forEach(e => st.put(e)); }); S.ans.push(...add); rebuildProg();
@@ -493,8 +513,8 @@ async function deleteAccount() {
 // ---- PWA ----
 Object.assign(S, { inst: null, upd: false, offline: false });
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); S.inst = e; if (S.tab === 'set') render(); });
-window.addEventListener('appinstalled', () => { S.inst = null; render(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); S.inst = e; if (S.pwa.state === 1) drawPwa(); if (S.tab === 'set') render(); });
+window.addEventListener('appinstalled', () => { S.inst = null; markInstalled(); render(); });
 window.addEventListener('online', () => { S.sync.msg = ''; if (S.auth) syncNow(true); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/blogspot\.com$/.test(location.hostname)) {
@@ -503,15 +523,38 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/bl
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) { S.upd = true; render(); } });
 }
 function pwaCard() {
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), st = standalone();
-  return `<div class="card"><b>Aplikasi (PWA)</b><p class="mu">${st ? 'Sudah terpasang dan berjalan sebagai aplikasi.' : 'Pasang di layar utama agar terbuka seperti aplikasi, tanpa Play Store atau APK. Aplikasi tetap bisa dipakai sebagai web biasa.'}</p>` +
-    (!st && S.inst ? '<button class="p" style="width:100%" data-a="install">Pasang aplikasi</button>' : '') +
-    (!st && !S.inst ? `<p class="mu">${ios ? 'iPhone/iPad: buka di Safari, ketuk ikon Bagikan, lalu pilih Tambahkan ke Layar Utama. Catatan: aplikasi terpasang menyimpan data terpisah dari Safari, jadi masuk ke akun (atau ekspor lalu impor cadangan) agar progres ikut.' : 'Jika tombol pasang tidak muncul, buka menu browser lalu pilih Instal aplikasi atau Tambahkan ke layar utama.'}</p>` : '') +
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), st = standalone(), inst = S.pwa.installed && !st;
+  return `<div class="card"><b>Aplikasi (PWA)</b><p class="mu">${st ? 'Sudah terpasang dan berjalan sebagai aplikasi.' : inst ? 'Sudah terpasang di perangkat ini. Buka lewat ikon di layar utama.' : 'Pasang di layar utama agar terbuka seperti aplikasi, tanpa Play Store atau APK. Aplikasi tetap bisa dipakai sebagai web biasa.'}</p>` +
+    (!st && !inst && S.inst ? '<button class="p" style="width:100%" data-a="install">Pasang aplikasi</button>' : '') +
+    (!st && !inst && !S.inst ? `<p class="mu">${ios ? 'iPhone/iPad: buka di Safari, ketuk ikon Bagikan, lalu pilih Tambahkan ke Layar Utama. Catatan: aplikasi terpasang menyimpan data terpisah dari Safari, jadi masuk ke akun (atau ekspor lalu impor cadangan) agar progres ikut.' : 'Jika tombol pasang tidak muncul, buka menu browser lalu pilih Instal aplikasi atau Tambahkan ke layar utama.'}</p>` : '') +
     `<div class="mu">Mode offline: ${S.offline ? 'sedang memakai materi tersimpan.' : 'materi tersimpan otomatis setelah dimuat sekali, sehingga belajar bisa tanpa internet. Sinkronisasi akun butuh internet.'}</div></div>`;
 }
+// ---- Ajakan pasang PWA (melayang; tutup dengan tombol X, klik di luar kotak, atau Esc) ----
+Object.assign(S, { pwa: { installed: false, never: false, snooze: 0, state: 0 } });   // state: 0 belum tampil, 1 tampil, 2 sudah ditutup
+function markInstalled() { S.pwa.installed = true; S.pwa.state = 2; kvSet('pwinstalled', 1); $('pw').innerHTML = ''; }   // sudah terpasang -> tidak muncul lagi
+function pwaEligible() {
+  return !standalone() && !S.pwa.installed && !S.pwa.never && Date.now() > S.pwa.snooze && location.protocol.startsWith('http') && !/blogspot\.com$/.test(location.hostname) && !(S.Q.run && !S.Q.run.done);
+}
+function showPwa() { if (S.pwa.state === 0 && pwaEligible()) { S.pwa.state = 1; drawPwa(); } }
+function dismissPwa() { S.pwa.state = 2; S.pwa.snooze = Date.now() + 7 * DAY; kvSet('pwsnooze', S.pwa.snooze); $('pw').innerHTML = ''; }   // ditutup -> diingatkan lagi 7 hari kemudian
+function neverPwa() { S.pwa.never = true; S.pwa.state = 2; kvSet('pwnever', 1); $('pw').innerHTML = ''; }   // pilihan pengguna: jangan tampilkan lagi
+function drawPwa() {
+  const ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), android = /android/i.test(ua);
+  const steps = ios ? ['Ketuk ikon <b>Bagikan</b> (kotak dengan panah ke atas) di Safari.', 'Pilih <b>Tambahkan ke Layar Utama</b>, lalu ketuk <b>Tambah</b>.']
+    : android ? ['Ketuk menu <b>⋮</b> di pojok kanan atas browser.', 'Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>.']
+    : ['Klik ikon <b>Pasang</b> di sisi kanan bilah alamat browser, atau buka menu browser lalu pilih <b>Instal Ayo Benkyō</b>.'];
+  $('pw').innerHTML = `<div class="modal" style="z-index:60" data-a="pwclose"><div class="sheet"><button class="x" data-a="pwx" aria-label="Tutup">✕</button>
+    <div style="font-size:18px;font-weight:800;padding-right:44px">Pasang Ayo Benkyō di perangkat Anda</div>
+    <p class="mu">Buka lebih cepat dari layar utama, tampil layar penuh, dan tetap bisa belajar saat offline. Gratis, tanpa Play Store atau APK.</p>
+    ${S.inst ? '<button class="p" style="width:100%" data-a="pwinstall">Pasang sekarang</button>' : `<ol class="mu">${steps.map(x => '<li>' + x + '</li>').join('')}</ol>`}
+    ${ios ? '<p class="sm">Catatan: aplikasi terpasang di iPhone menyimpan data terpisah dari Safari. Masuk ke akun lebih dulu agar progres ikut.</p>' : ''}
+    <button style="width:100%;margin-top:10px" data-a="pwx">Nanti saja</button>
+    <button style="width:100%;margin-top:4px;border:0;background:none;color:var(--mu);min-height:40px;font-size:14px;box-shadow:none" data-a="pwnever">Jangan tampilkan lagi</button></div></div>`;
+}
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && S.pwa.state === 1) dismissPwa(); });
 function render() {
   const t = { home: 'Beranda', materi: 'Materi', card: 'Flashcard', quiz: 'Latihan', review: 'Review', stat: 'Statistik', set: 'Setelan' };
-  $('hd').innerHTML = 'Irodori <small>' + (TT[S.tab] || '') + '</small>';
+  $('hd').innerHTML = 'Ayo Benkyō <small>' + (TT[S.tab] || '') + '</small>';
   const d = dueCount(); $('nav').innerHTML = [['home', 'Beranda'], ['materi', 'Materi'], ['card', 'Kartu'], ['quiz', 'Latihan']].map(([k, l]) => `<button class="${S.tab === k ? 'on' : ''}" data-a="tab" data-v="${k}">${svg(k)}<span>${l}</span></button>`).join('') +
     `<button class="${['review', 'stat', 'set'].includes(S.tab) ? 'on' : ''}" data-a="menu">${svg('more')}<span>Lainnya</span>${d ? `<i class="dot">${d > 99 ? '99+' : d}</i>` : ''}</button>`;
   $('v').innerHTML = S.loading ? '<p class="mu">Memuat materi…</p>' : S.err ? `<div class="card err">Gagal memuat: ${E(S.err)}</div>` :
@@ -561,7 +604,10 @@ R.addEventListener('click', async e => {
   else if (a === 'delopen') S.delOpen = true;
   else if (a === 'delcancel') S.delOpen = false;
   else if (a === 'delok') return deleteAccount();
-  else if (a === 'install') { S.inst.prompt(); await S.inst.userChoice; S.inst = null; }
+  else if (a === 'pwnever') { neverPwa(); return; }
+  else if (a === 'pwx' || a === 'pwclose') { dismissPwa(); return; }
+  else if (a === 'pwinstall') { S.inst.prompt(); const c = await S.inst.userChoice; S.inst = null; if (c.outcome === 'accepted') markInstalled(); else dismissPwa(); return; }
+  else if (a === 'install') { S.inst.prompt(); const c = await S.inst.userChoice; S.inst = null; if (c.outcome === 'accepted') markInstalled(); }
   else if (a === 'reload') { location.reload(); return; }
   else if (a === 'menu') { moreSheet(); return; }
   else if (a === 'rvstart') await startReview();

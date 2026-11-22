@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Irodori Learning",
-  "short_name": "Irodori",
-  "description": "Belajar kosakata dan kanji bahasa Jepang (Irodori): flashcard, latihan soal, dan pengulangan terjadwal.",
+  "name": "Benkyō shimasho",
+  "short_name": "Ayo Benkyō",
+  "description": "Belajar kosakata dan kanji bahasa Jepang: flashcard, latihan soal, dan pengulangan terjadwal.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
