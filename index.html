@@ -61,7 +61,7 @@ async function apiRaw(action, data) {
   finally { clearTimeout(tm); }
   const j = await r.json(); if (!j.ok) { const e = new Error(j.error.message); e.code = j.error.code; throw e; } return j.data;
 }
-const CACHEABLE = { getBooks: () => 'books', getWords: d => 'words:' + (d.books || []).join(',') + ':' + (d.chapters || []).join(',') };
+const CACHEABLE = { getBooks: () => 'books', getWords: d => 'words:' + (d.books || []).join(',') + ':' + (d.chapters || []).join(',') + ':' + (d.src || 'bk') };
 async function api(action, data) {   // materi: simpan salinan; jika offline pakai salinan terakhir
   const ck = CACHEABLE[action];
   try { const r = await apiRaw(action, data); if (ck) kvSet('c:' + ck(data || {}), r).catch(() => {}); return r; }
@@ -111,16 +111,20 @@ async function init() {
   S.set = (await kvGet('set')) || S.set; S.setTs = (await kvGet('setts')) || 0; S.Q.cfg.n = S.set.n; S.Q.cfg.mode = S.set.mode; applyTheme(); rebuildProg();
   try {
     const ver = (await api('getBooks'));
-    S.books = ver.books; S.sel = ver.books.filter(b => b.count > 0).slice(-1).map(b => b.id);
-    const sv = await kvGet('sel'); if (sv && sv.every(id => ver.books.some(b => b.id === id && b.count))) S.sel = sv;
+    S.books = ver.books; S.sel = ver.books.filter(b => b.count > 0 || b.kjCount > 0).slice(-1).map(b => b.id);
+    const sv = await kvGet('sel'); if (sv && sv.every(id => ver.books.some(b => b.id === id && (b.count || b.kjCount)))) S.sel = sv;
     await loadWords();
   } catch (e) { S.err = e.message; }
   S.loading = false; render(); if (S.auth) syncNow(true); setTimeout(showPwa, 3000);
 }
-async function loadWords() {
-  for (const b of S.sel) if (!S.words[b]) S.words[b] = (await api('getWords', { books: [b] })).words;
+async function loadBook(b) {   // kotoba buku (kunci 'A2_2') dan poin kanji (kunci 'A2_2#kj')
+  const bk = S.books.find(x => x.id === b); if (!bk) return;
+  if (bk.count && !S.words[b]) S.words[b] = (await api('getWords', { books: [b] })).words;
+  if (bk.kjCount && !S.words[b + '#kj']) S.words[b + '#kj'] = (await api('getWords', { books: [b], src: 'kj' })).words;
 }
-const cur = () => S.sel.flatMap(b => S.words[b] || []);
+async function loadWords() { for (const b of S.sel) await loadBook(b); }
+const keysOf = b => S.src === 'bk' ? [b] : S.src === 'kj' ? [b + '#kj'] : [b, b + '#kj'];
+const cur = () => S.sel.flatMap(b => keysOf(b).flatMap(k => S.words[k] || []));
 const babs = () => [...new Set(cur().map(w => w.bab))].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
 const cats = () => [...new Set(cur().map(w => w.kategori))].sort();
 function filtered() {
@@ -147,17 +151,18 @@ function srsApply(st, ev) {
   return s;
 }
 function addAns(ev) { autoSync(); S.ans.push(ev); S.prog[ev.wordId] = srsApply(S.prog[ev.wordId] || srsNew(), { ok: ev.benar, ts: ev.ts, manual: ev.manual || '' }); return tx('answers', 'readwrite', st => st.put(ev)); }
-async function loadAll() { for (const b of S.books) if (b.count && !S.words[b.id]) S.words[b.id] = (await api('getWords', { books: [b.id] })).words; }
+async function loadAll() { for (const b of S.books) await loadBook(b.id); }
 const MS = { baru: 'Baru dipelajari', perlu_diulang: 'Perlu diulang', berkembang: 'Sedang berkembang', dikuasai: 'Dikuasai' };
 const status = id => ({ m: 'Dikuasai', r: 'Perlu diulang' }[S.marks[id]] || 'Belum ditandai');
 const hl = w => { const s = w.kalimat; if (w.tk && s.includes(w.tk)) { const i = s.indexOf(w.tk); return E(s.slice(0, i)) + '<mark>' + E(w.tk) + '</mark>' + E(s.slice(i + w.tk.length)); } return E(s); };
 // ---- Tampilan ----
 function filters() {
-  return `<div class="card"><div class="chips">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count ? '' : 'disabled'}>${E(b.label)}${b.count ? '' : ' (kosong)'}</button>`).join('')}</div>
-  <div class="mu" style="margin-bottom:6px">Pilih satu atau beberapa buku untuk gabungan.</div>
-  <select data-a="bab"><option value="">Semua bab</option>${babs().map(b => `<option ${S.bab === b ? 'selected' : ''}>${b}</option>`).join('')}</select>
-  ${catUI()}
-  <input id="q" placeholder="Cari kanji, furigana, atau arti" value="${E(S.q)}"></div>`;
+  const nf = (S.bab ? 1 : 0) + S.cats.length;
+  return `<div class="card"><input id="q" placeholder="Cari kanji, furigana, atau arti" value="${E(S.q)}">
+  <div class="chips" style="margin-top:0">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count || b.kjCount ? '' : 'disabled'}>${E(b.label)}${b.count || b.kjCount ? '' : ' (kosong)'}</button>`).join('')}</div>
+  ${srcUI()}
+  <button style="width:100%;display:flex;justify-content:space-between;align-items:center" data-a="fo"><span>Filter bab dan kategori${nf ? ' (' + nf + ' aktif)' : ''}</span><span>${S.fOpen ? '▴' : '▾'}</span></button>
+  ${S.fOpen ? `<div style="margin-top:10px"><select data-a="bab"><option value="">Semua bab</option>${babs().map(b => `<option ${S.bab === b ? 'selected' : ''}>${b}</option>`).join('')}</select>${catUI()}</div>` : ''}</div>`;
 }
 function vHome() {
   const P = Object.values(S.prog).filter(x => x.events > 0), now = Date.now(), qa = S.ans.filter(a => !a.manual), ok = qa.filter(a => a.benar).length;
@@ -175,10 +180,13 @@ function vHome() {
 }
 function vMateri() { return filters() + '<div id="lst">' + listHTML() + '</div>'; }
 function listHTML() {
-  const l = filtered();
-  return `<div class="mu" style="margin:0 4px 8px">${l.length} kotoba</div><div class="card" style="padding:4px 14px">${l.slice(0, S.shown).map(w =>
-    `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.furi)} · ${E(w.arti)}</div></div><span class="tag">${S.favs[w.id] ? '★ ' : ''}${w.bab}</span></div>`).join('') || '<p class="mu">Tidak ada hasil.</p>'}
-  ${l.length > S.shown ? '<button style="width:100%;margin:10px 0" data-a="more">Tampilkan lebih banyak</button>' : ''}</div>`;
+  const l = filtered(), kj = l.filter(w => w.src === 'kj'), all = S.src === 'all', ord = all ? kj.concat(l.filter(w => w.src !== 'kj')) : l;
+  let last = '', h = '';
+  ord.slice(0, S.shown).forEach(w => {
+    if (all && w.src !== last) { last = w.src; h += `<div class="mu" style="margin:12px 0 2px;font-weight:700">${w.src === 'kj' ? 'Poin kanji (' + kj.length + ')' : 'Kotoba buku (' + (l.length - kj.length) + ')'}</div>`; }
+    h += `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.furi)} · ${E(w.arti)}</div></div><span class="tag">${S.favs[w.id] ? '★ ' : ''}${E(lbl(w))}</span></div>`;
+  });
+  return `<div class="mu" style="margin:0 4px 8px">${l.length} kata</div><div class="card" style="padding:4px 14px">${h || '<p class="mu">Tidak ada hasil.</p>'}${ord.length > S.shown ? '<button style="width:100%;margin:10px 0" data-a="more">Tampilkan lebih banyak</button>' : ''}</div>`;
 }
 function buildDeck() {
   const ids = filtered().map(w => w.id);
@@ -192,7 +200,7 @@ function cardBody() {
   if (!w) return top + '<div class="card mu">Tidak ada kartu. Ubah filter lalu tekan "Susun ulang kartu".</div>';
   return top + `<div class="mu" style="text-align:center;margin-bottom:6px">${F.i + 1} / ${F.deck.length} · ${status(w.id)}</div>
   <div class="fc"><div class="fci ${F.flip ? 'f' : ''}" data-a="flip"><div class="face"><div class="big">${E(w.kanji)}</div><div class="mu" style="margin-top:10px">Ketuk untuk membalik</div></div>
-  <div class="face back"><div class="jp">${E(w.furi)}</div><div style="margin:6px 0;font-weight:600">${E(w.arti)}</div><span class="tag">${E(w.kategori)}</span>
+  <div class="face back"><div class="jp">${E(w.furi)}</div><div style="margin:6px 0;font-weight:600">${E(w.arti)}</div><span class="tag">${E(w.kategori)}</span> <span class="tag">${E(lbl(w))}</span>
   <div style="margin-top:10px">${hl(w)}</div><div class="sm">${E(w.furiKalimat)}</div><div class="sm">${E(w.artiKalimat)}</div></div></div></div>
   <div class="row"><button data-a="prev" ${F.i ? '' : 'disabled'}>◀ Sebelumnya</button><button data-a="next" ${F.i < F.deck.length - 1 ? '' : 'disabled'}>Berikutnya ▶</button></div>
   <div class="row"><button data-a="mk" data-v="m" class="${S.marks[w.id] === 'm' ? 'on' : ''}">✓ Sudah dikuasai</button><button data-a="mk" data-v="r" class="${S.marks[w.id] === 'r' ? 'on' : ''}">↻ Perlu diulang</button></div>
@@ -201,7 +209,7 @@ function cardBody() {
 function detail(id) {
   const w = byId(id); if (!w) return;
   $('m').innerHTML = `<div class="modal" data-a="close"><div class="sheet"><div class="jp" style="font-size:34px">${E(w.kanji)}</div>
-  <div>${E(w.furi)}</div><p><b>${E(w.arti)}</b></p><span class="tag">${E(w.kategori)}</span> <span class="tag">${w.id}</span> <span class="tag">${status(w.id)}</span>
+  <div>${E(w.furi)}</div><p><b>${E(w.arti)}</b></p><span class="tag">${E(w.kategori)}</span> <span class="tag">${E(lbl(w))}</span> <span class="tag">${status(w.id)}</span>
   <p>${hl(w)}</p><div class="sm">${E(w.furiKalimat)}</div><div class="sm">${E(w.artiKalimat)}</div>
   <div class="row"><button data-a="dm" data-v="${w.id}|m">✓ Dikuasai</button><button data-a="dm" data-v="${w.id}|r">↻ Perlu diulang</button></div>
   <div class="row"><button data-a="df" data-v="${w.id}">${S.favs[w.id] ? '★ Hapus favorit' : '☆ Favorit'}</button><button data-a="close">Tutup</button></div></div></div>`;
@@ -265,8 +273,8 @@ function setupV() {
   const c = S.Q.cfg, ch = (k, v, label, on) => `<button class="${on ? 'on' : ''}" data-a="qc" data-v="${k}=${v}">${label}</button>`;
   const nums = [...new Set(cur().map(w => bn(w.bab)))].sort((a, b) => a - b), sel = (k) => `<select data-a="qsel" data-k="${k}"><option value="">${k === 'from' ? 'Dari bab' : 'Sampai bab'}</option>${nums.map(n => `<option value="${n}" ${String(c[k]) === String(n) ? 'selected' : ''}>L${n}</option>`).join('')}</select>`;
   return (S.Q.msg ? `<div class="card err">${E(S.Q.msg)}</div>` : '') +
-  `<div class="card"><b>Sumber soal</b><div class="chips" style="margin-top:8px">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count ? '' : 'disabled'}>${E(b.label)}${b.count ? '' : ' (kosong)'}</button>`).join('')}</div>
-  ${catUI()}<div class="row">${sel('from')}${sel('to')}</div><div class="mu">Kosongkan bab untuk semua bab; isi keduanya untuk satu bab atau rentang.</div></div>
+  `<div class="card"><b>Sumber soal</b><div class="chips" style="margin-top:8px">${S.books.map(b => `<button class="${S.sel.includes(b.id) ? 'on' : ''}" data-a="book" data-v="${b.id}" ${b.count || b.kjCount ? '' : 'disabled'}>${E(b.label)}${b.count || b.kjCount ? '' : ' (kosong)'}</button>`).join('')}</div>
+  ${srcUI()}${catUI()}<div class="row">${sel('from')}${sel('to')}</div><div class="mu">Kosongkan bab untuk semua bab; isi keduanya untuk satu bab atau rentang.</div></div>
   <div class="card"><b>Jenis latihan</b><div class="chips" style="margin-top:8px">${Object.keys(JN).map(k => `<button class="${c.jenis.includes(k) ? 'on' : ''}" data-a="qj" data-v="${k}">${JN[k]}</button>`).join('')}</div></div>
   <div class="card"><b>Jumlah soal</b><div class="chips" style="margin-top:8px">${['10', '20', '30', 'custom'].map(n => ch('n', n, n === 'custom' ? 'Custom' : n, c.n === n)).join('')}</div>
   ${c.n === 'custom' ? `<input id="qcustom" type="number" min="1" placeholder="Jumlah soal" value="${E(c.custom)}">` : ''}
@@ -277,7 +285,7 @@ function setupV() {
 }
 function questionV() {
   const r = S.Q.run, q = r.qs[r.i], w = byId(q.id), N = r.qs.length;
-  let h = `<div class="row" style="align-items:center;margin-bottom:8px"><span class="mu">${JN[q.t]} · ${r.i + 1}/${N}${r.mode === 'ujian' ? ' · Ujian' : ''}</span><button data-a="qstop" style="flex:0 0 auto">Hentikan</button></div>${r.i === 0 && S.Q.msg ? `<div class="mu">${E(S.Q.msg)}</div>` : ''}<div class="card" style="text-align:center">`;
+  let h = `<div class="row" style="align-items:center;margin-bottom:8px"><span class="mu">${JN[q.t]} · ${r.i + 1}/${N} · ${E(lbl(w))}${r.mode === 'ujian' ? ' · Ujian' : ''}</span><button data-a="qstop" style="flex:0 0 auto">Hentikan</button></div>${r.i === 0 && S.Q.msg ? `<div class="mu">${E(S.Q.msg)}</div>` : ''}<div class="card" style="text-align:center">`;
   if (q.t === 'kalimat') h += `<div class="jp">${hl(w)}</div><p>Apa arti kata <b>${E(q.prompt)}</b>?</p>`;
   else if (q.t === 'tulis') h += `<div class="mu">Tulislah kanji/kotoba untuk:</div><div style="font-size:22px;font-weight:600">${E(q.prompt)}</div>`;
   else h += `<div class="${q.t === 'kanji' ? 'jp' : 'big'}">${E(q.prompt)}</div><div class="mu">${{ arti: 'Pilih arti yang benar', furigana: 'Pilih bacaan yang benar', kanji: 'Pilih kanji/kotoba yang benar' }[q.t]}</div>`;
@@ -295,7 +303,7 @@ function resultV() {
   const r = S.Q.run, N = r.ans.length, ok = r.ans.filter(a => a.ok).length, bad = N - ok;
   return `<div class="card" style="text-align:center"><div class="num">${Math.round(ok / N * 100)}%</div><div>${ok} benar · ${bad} salah · ${N} soal</div><div class="mu">${r.mode === 'ujian' ? 'Mode ujian' : 'Mode latihan'} · hasil tersimpan</div></div>
   <div class="row">${bad ? '<button class="p" data-a="qretry">Ulangi yang salah</button>' : ''}<button data-a="qnew">Latihan baru</button><button data-a="home">Beranda</button></div><h3>Pembahasan</h3>` +
-  r.ans.map(a => { const w = byId(a.q.id); return `<div class="card"><b class="${a.ok ? '' : 'err'}">${a.ok ? '✓' : '✗'} ${JN[a.q.t]}</b><div class="jp">${E(w.kanji)}</div><div class="sm">${E(w.furi)} · ${E(w.arti)}</div>${a.q.t === 'tulis' ? '' : `<div>Jawaban benar: <b>${E(a.q.ans)}</b></div>${a.ok ? '' : `<div class="err">Jawabanmu: ${E(a.given)}</div>`}`}<div class="sm">${E(w.kalimat)} — ${E(w.artiKalimat)}</div></div>`; }).join('');
+  r.ans.map(a => { const w = byId(a.q.id); return `<div class="card"><b class="${a.ok ? '' : 'err'}">${a.ok ? '✓' : '✗'} ${JN[a.q.t]}</b><div class="jp">${E(w.kanji)}</div><div class="sm">${E(lbl(w))} · ${E(w.furi)} · ${E(w.arti)}</div>${a.q.t === 'tulis' ? '' : `<div>Jawaban benar: <b>${E(a.q.ans)}</b></div>${a.ok ? '' : `<div class="err">Jawabanmu: ${E(a.given)}</div>`}`}<div class="sm">${E(w.kalimat)} — ${E(w.artiKalimat)}</div></div>`; }).join('');
 }
 const vQuiz = () => !S.Q.run ? setupV() : S.Q.run.done ? resultV() : questionV();
 function initCanvas() {
@@ -320,7 +328,7 @@ function vReview() {
   <div class="row"><button class="p" data-a="rvstart" ${d.length ? '' : 'disabled'}>Mulai review (maks. 30)</button></div>
   ${d.length ? '' : `<p class="mu">${nx ? 'Review berikutnya: ' + new Date(nx).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Belum ada kotoba yang dipelajari. Mulai dari Flashcard atau Latihan.'}</p>`}${S.Q.msg ? `<p class="err">${E(S.Q.msg)}</p>` : ''}</div>
   <div class="card"><b>Tingkat penguasaan</b>${Object.keys(MS).map(k => `<div class="item" style="cursor:default"><span>${MS[k]}</span><b>${cnt[k] || 0}</b></div>`).join('')}</div>
-  <div class="card"><b>Antrean review</b>${d.slice(0, 20).map(w => `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.arti)}</div></div><span class="tag">Lv ${S.prog[w.id].level}</span></div>`).join('') || '<p class="mu">Kosong.</p>'}</div>`;
+  <div class="card"><b>Antrean review</b>${d.slice(0, 20).map(w => `<div class="item" data-a="det" data-v="${w.id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(lbl(w))} · ${E(w.arti)}</div></div><span class="tag">Lv ${S.prog[w.id].level}</span></div>`).join('') || '<p class="mu">Kosong.</p>'}</div>`;
 }
 async function startReview() {
   await loadAll(); const all = Object.values(S.words).flat(), qs = [];
@@ -341,10 +349,11 @@ function vStat() {
   <div class="card"><div class="num">${S.hist.length}</div><div class="mu">Sesi latihan · ${rv} soal review</div></div></div>
   <div class="card"><b>Jawaban 14 hari terakhir</b><div style="display:flex;gap:4px;align-items:flex-end;height:90px;margin-top:8px">${days.map(d => `<div style="flex:1;text-align:center"><div style="height:${Math.max(2, d.n / mx * 70)}px;background:var(--no);opacity:.7;border-radius:4px;position:relative;overflow:hidden"><div style="position:absolute;bottom:0;left:0;right:0;height:${d.n ? d.c / d.n * 100 : 0}%;background:var(--ok)"></div></div><div class="sm">${d.l}</div></div>`).join('')}</div><div class="sm">Hijau = benar, merah = salah</div></div>
   <div class="card"><b>Riwayat nilai</b>${S.hist.slice(-10).reverse().map(h => `<div style="margin:6px 0"><div class="row" style="margin:0"><span class="sm">${new Date(h.ts).toLocaleDateString('id-ID')} · ${h.mode}</span><b style="text-align:right">${Math.round(h.benar / h.total * 100)}%</b></div>${bar(h.benar / h.total * 100, 0)}</div>`).join('') || '<p class="mu">Belum ada.</p>'}</div>
-  <div class="card"><b>Per buku</b>${rows(grp(w => ({ key: w.book, label: w.book })))}</div>
-  <div class="card"><b>Per bab</b>${rows(grp(w => ({ key: w.book + ('0' + bn(w.bab)).slice(-2), label: w.book + ' ' + w.bab })))}</div>
+  <div class="card"><b>Per sumber</b>${rows(grp(w => ({ key: w.src, label: w.src === 'kj' ? 'Poin kanji' : 'Kotoba buku' })))}</div>
+  <div class="card"><b>Per buku</b>${rows(grp(w => ({ key: w.book, label: bl(w.book) })))}</div>
+  <div class="card"><b>Per bab</b>${rows(grp(w => ({ key: w.src + w.book + ('0' + bn(w.bab)).slice(-2), label: lbl(w) })))}</div>
   <div class="card"><b>Per kategori</b>${rows(grp(w => ({ key: w.kategori, label: w.kategori })))}</div>
-  <div class="card"><b>Sering salah</b>${pairs.map(([id, x]) => { const w = byId(id); return `<div class="item" data-a="det" data-v="${id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(w.arti)}</div></div><span class="tag">${x.wrong}× salah</span></div>`; }).join('') || '<p class="mu">Belum ada kesalahan.</p>'}</div>
+  <div class="card"><b>Sering salah</b>${pairs.map(([id, x]) => { const w = byId(id); return `<div class="item" data-a="det" data-v="${id}"><div><span class="jp">${E(w.kanji)}</span><div class="sm">${E(lbl(w))} · ${E(w.arti)}</div></div><span class="tag">${x.wrong}× salah</span></div>`; }).join('') || '<p class="mu">Belum ada kesalahan.</p>'}</div>
   <div class="card"><b>Cadangan progres Guest</b><p class="mu">Simpan file ini secara berkala. Menghapus data situs/browser menghapus progres Guest.</p><button class="p" data-a="export">Ekspor cadangan (JSON)</button></div>`;
 }
 function exportBackup() {
@@ -552,6 +561,10 @@ function drawPwa() {
     <button style="width:100%;margin-top:4px;border:0;background:none;color:var(--mu);min-height:40px;font-size:14px;box-shadow:none" data-a="pwnever">Jangan tampilkan lagi</button></div></div>`;
 }
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && S.pwa.state === 1) dismissPwa(); });
+Object.assign(S, { src: 'all', fOpen: false });
+const bl = id => (S.books.find(b => b.id === id) || {}).label || id;
+const lbl = w => bl(w.book) + ' · ' + w.bab + (w.src === 'kj' ? ' · Kanji' : '');   // contoh: A2.2 · L5 · Kanji
+const srcUI = () => `<div class="chips">${[['all', 'Semua'], ['bk', 'Kotoba'], ['kj', 'Kanji']].map(([k, l]) => `<button class="${S.src === k ? 'on' : ''}" data-a="src" data-v="${k}">${l}</button>`).join('')}</div>`;
 function render() {
   const t = { home: 'Beranda', materi: 'Materi', card: 'Flashcard', quiz: 'Latihan', review: 'Review', stat: 'Statistik', set: 'Setelan' };
   $('hd').innerHTML = 'Ayo Benkyō <small>' + (TT[S.tab] || '') + '</small>';
@@ -599,6 +612,8 @@ R.addEventListener('click', async e => {
   else if (a === 'th') { S.set.theme = v; applyTheme(); touchSet(); }
   else if (a === 'sd') { const [k, val] = v.split('='); S.set[k] = val; S.Q.cfg[k] = val; touchSet(); }
   else if (a === 'cg') { S.cats = S.cats.includes(v) ? S.cats.filter(x => x !== v) : S.cats.concat(v); S.shown = 80; if (S.tab === 'card') buildDeck(); }
+  else if (a === 'src') { S.src = v; S.bab = ''; S.cats = []; S.shown = 80; if (S.tab === 'card') buildDeck(); }
+  else if (a === 'fo') S.fOpen = !S.fOpen;
   else if (a === 'cgo') S.catOpen = !S.catOpen;
   else if (a === 'cgx') { S.cats = []; S.shown = 80; if (S.tab === 'card') buildDeck(); }
   else if (a === 'delopen') S.delOpen = true;
